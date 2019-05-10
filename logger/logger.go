@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"../../gox"
 	"bytes"
 	"fmt"
 	"github.com/sirupsen/logrus"
