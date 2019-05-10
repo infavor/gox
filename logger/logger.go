@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func InitLogger() {
+func Init() {
 	// Log as JSON instead of the default ASCII formatter.
 	// log.SetFormatter(&log.JSONFormatter{})
 	// log.SetFormatter(&log.TextFormatter{})
@@ -33,7 +33,7 @@ func (f *MyTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	} else {
 		b = &bytes.Buffer{}
 	}
-	b.WriteString(common.GetLongLongDateString(entry.Time))
+	b.WriteString(gox.GetLongLongDateString(entry.Time))
 	b.WriteString(" | ")
 	b.WriteString(fmt.Sprintf("%-5s", strings.ToUpper(entry.Level.String())))
 	b.WriteString(" | ")

@@ -1,121 +1,90 @@
+// Copyright (C) 2019 tisnyo <tisnyo@gmail.com>.
+//
+// A pool allows a particular type of work to run in it and limits its parallel number and maximum wait queue length.
+// license that can be found in the LICENSE file.
 package pool
 
 import (
 	"container/list"
 	"errors"
 	"sync"
-	"util/common"
-	"util/logger"
 )
 
-// simple goroutine pool implementation for arrange task and limiting max active task
-
-func NewPool(MaxActiveSize int, MaxWaitSize int) (*Pool, error) {
-	return initPool(MaxActiveSize, MaxWaitSize)
+// pool is a task pool which can limit the number of concurrent task.
+type pool struct {
+	coreSize       int
+	maxWait        int
+	activeTaskSize int
+	listLock       *sync.Mutex
+	numLock        *sync.Mutex
+	cha            chan int
+	waitingList    *list.List
 }
 
-type ITask interface {
-	Run(pool *Pool)
-}
-
-type Task struct {
-	f func()
-}
-
-type IPool interface {
-	Exec(task *func()) error      // add a new task to task list
-	runTask(f func())             // keep trying to fetch task
-	taskFinish()                  // call when a task is finish
-	modifyActiveCount(m int) *int // modify current active task size
-}
-
-type Pool struct {
-	MaxActiveSize        int        // max active size
-	MaxWaitSize          int        // max wait size
-	WaitingTaskList      *list.List // wait list
-	activeGoroutineMutex sync.Mutex
-	reassignTaskMutex    sync.Mutex
-	activeGoroutine      int      // current active Goroutine number
-	chanNotify           chan int // channel to notify to run next task
-}
-
-// initPool initial pool
-func initPool(MaxActiveSize int, MaxWaitSize int) (*Pool, error) {
-	logger.Debug("initial thread pool...")
-	if MaxActiveSize <= 0 {
-		return nil, errors.New("thread pool size value must be positive")
+// New creates a task pool.
+func New(coreSize int, maxWait int) *pool {
+	p := &pool{
+		coreSize:       coreSize,
+		maxWait:        maxWait,
+		activeTaskSize: 0,
+		listLock:       new(sync.Mutex),
+		numLock:        new(sync.Mutex),
+		cha:            make(chan int),
+		waitingList:    list.New(),
 	}
-	p := &Pool{
-		MaxActiveSize:        MaxActiveSize,
-		MaxWaitSize:          MaxWaitSize,
-		WaitingTaskList:      list.New(),
-		activeGoroutineMutex: *new(sync.Mutex),
-		reassignTaskMutex:    *new(sync.Mutex),
-		activeGoroutine:      0,
-		chanNotify:           make(chan int),
-	}
-	go p.runTask()
-	return p, nil
+	go p.taskWatcher()
+	return p
 }
 
-// Exec add a new task to pool
-func (pool *Pool) Exec(t func()) error {
-	logger.Trace("pool get new task")
-	// if no free thread found then put the task in 'pool.WaitingList'.
-	if pool.WaitingTaskList.Len()+pool.modifyActiveCount(0) >= pool.MaxActiveSize+pool.MaxWaitSize {
-		return errors.New("pool is full, can not take any more")
+// Push push a new task into waiting list
+func (pool *pool) Push(task func()) error {
+	if pool.waitingList.Len() == pool.maxWait {
+		return errors.New("pool is full")
 	}
-	logger.Trace("push task into waiting list")
-	pool.WaitingTaskList.PushBack(t)
-	// if active task size is not full, start task immediately
-	if pool.modifyActiveCount(0) < pool.MaxActiveSize {
-		pool.chanNotify <- 1
+	pool.waitingList.PushBack(task)
+	if pool.waitingList.Len() > 0 && pool.updateActiveTaskSize(0) < pool.coreSize {
+		pool.cha <- 1
 	}
 	return nil
 }
 
-// modifyActiveCount get current active task size
-func (pool *Pool) modifyActiveCount(count int) int {
-	pool.activeGoroutineMutex.Lock()
-	defer pool.activeGoroutineMutex.Unlock()
-	pool.activeGoroutine += count
-	return pool.activeGoroutine
+// Push push a new task into waiting list
+func (pool *pool) fetchTask() func() {
+	pool.listLock.Lock()
+	defer pool.listLock.Unlock()
+	for pool.waitingList.Len() == 0 || pool.updateActiveTaskSize(0) >= pool.coreSize {
+		<-pool.cha
+	}
+	return pool.waitingList.Remove(pool.waitingList.Front()).(func())
 }
 
-// taskFinish call by a finished task for notifying a new task can be run
-func (pool *Pool) taskFinish() {
-	pool.reassignTaskMutex.Lock()
-	defer pool.reassignTaskMutex.Unlock()
-	pool.modifyActiveCount(-1)
-	logger.Trace("thread free")
-	pool.chanNotify <- 0
+// updateActiveTaskSize update current pool's active task size.
+func (pool *pool) updateActiveTaskSize(increment int) int {
+	pool.numLock.Lock()
+	defer pool.numLock.Unlock()
+	pool.activeTaskSize += increment
+	return pool.activeTaskSize
 }
 
-// runTask wait signal and fetch task for running
-func (pool *Pool) runTask() {
+// taskWatcher watches task list and executes them.
+func (pool *pool) taskWatcher() {
 	for {
-		logger.Trace("waiting for new task...")
-		<-pool.chanNotify
-		waitList := pool.WaitingTaskList
-		if waitList.Len() > 0 {
-			pool.modifyActiveCount(1)
-			nt := &Task{f: waitList.Remove(waitList.Front()).(func())}
-			go nt.Run(pool)
-		} else {
-			logger.Trace("waiting list has no task.")
+		task := pool.fetchTask()
+		if task != nil {
+			pool.updateActiveTaskSize(1)
+			go pool.execute(task)
 		}
 	}
 }
 
-// Run run a task here
-func (t *Task) Run(pool *Pool) {
-	logger.Trace("get a new task")
-	// set task to nil and notice finally
-	defer pool.taskFinish()
-	common.Try(func() {
-		t.f()
-	}, func(i interface{}) {
-		logger.Error("exec task error: ", i)
-		panic(i)
-	})
+// execute execute a task and callback function.
+func (pool *pool) execute(task func()) {
+	defer func() {
+		pool.updateActiveTaskSize(-1)
+		pool.cha <- 1
+		/*if err := recover(); err != nil {
+			// error
+		}*/
+	}()
+	task()
 }
