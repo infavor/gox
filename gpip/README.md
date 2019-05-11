@@ -10,16 +10,18 @@ It can transfer text message and byte content such as file with very easy way.
 ***Server side:***
 
 ```golang
-listener, e1 := net.Listen("tcp", ":8080")
-if e1 != nil {
-    panic(e1)
-}
-for {
-    conn, err := listener.Accept()
-    if err != nil {
-        panic(err)
-    }
-    go serverHandler(conn)
+func main() {
+	listener, e1 := net.Listen("tcp", ":8080")
+	if e1 != nil {
+		panic(e1)
+	}
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			panic(err)
+		}
+		go serverHandler(conn)
+	}
 }
 
 
@@ -27,22 +29,21 @@ func serverHandler(conn net.Conn) {
 	pip := &gpip.Pip{
 		Conn: conn,
 	}
-	fmt.Println("server is listening")
+	defer pip.Close()
 	for {
-		frame, err := pip.Receive()
+		err := pip.Receive(&common.Header{}, func(_header interface{}, bodyReader io.Reader, bodyLength int64) error {
+			header := _header.(*common.Header)
+			bs, _ := json.Marshal(header)
+			log.Info("server got message:", string(bs))
+			return pip.Send(&common.Header{
+				Code: 200,
+				Attribute: map[string]string{"Result":"success"},
+			}, nil, 0)
+		})
 		if err != nil {
-			panic(err)
+			log.Error("error receive data:", err)
+			break
 		}
-		u, err := frame.GetMeta(reflect.TypeOf(&User1{}))
-		if err != nil {
-			panic(err)
-		}
-		d, _ := gpip.Serialize(u)
-		fmt.Println("server收到消息:", string(d))
-		resp := &gpip.PipFrame{
-			Meta: &User1{Name: "zhangsan"},
-		}
-		pip.Send(resp)
 	}
 }
 
@@ -52,29 +53,31 @@ func serverHandler(conn net.Conn) {
 Client side:
 
 ```golang
-conn, err := net.Dial("tcp", "127.0.0.1:8080")
-if err != nil {
-    panic(err)
-}
-pip := &gpip.Pip{
-    Conn: conn,
-}
-for {
-    u := &User{Name: "lisi"}
-    frame := &gpip.PipFrame{
-        Meta: u,
-    }
-    if err := pip.Send(frame); err != nil {
-        panic(err)
-    }
-    resp, err := pip.Receive()
-    if err != nil {
-        panic(err)
-    }
-    u1, err := resp.GetMeta(reflect.TypeOf(&User{}))
-    if err != nil {
-        panic(err)
-    }
-    gpip.Serialize(u1)
+func main() {
+	conn, err := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(common.ServerPort))
+	if err != nil {
+		log.Fatal("error start client:", err)
+	}
+	pip := &gpip.Pip{
+		Conn: conn,
+	}
+	defer pip.Close()
+	err := pip.Send(&common.Meta{
+		Code: 1,
+		Attribute: nil,
+	}, nil, 0)
+	if err != nil {
+		log.Fatal("error send data:", err)
+		break
+	}
+	err = pip.Receive(&common.Header{}, func(_header interface{}, bodyReader io.Reader, bodyLength int64) error {
+		/*header := _header.(*common.Header)
+		bs, _ := json.Marshal(header)
+		log.Info("client got message:", string(bs))*/
+		return nil
+	})
+	if err != nil {
+		log.Error("error:", err)
+	}
 }
 ```
