@@ -20,10 +20,15 @@ const (
 
 // pipFrame defines a pipe request instance.
 type pipFrame struct {
-	frameHead  []byte
-	Meta       interface{}
-	metaBody   []byte
+	// head bytes of frame
+	frameHead []byte
+	// frame header object
+	Header interface{}
+	// bytes array of frame header
+	headerBody []byte
+	// frame body length
 	bodyLength int64
+	// frame body reader
 	bodyReader io.Reader
 }
 
@@ -37,8 +42,8 @@ func (frame *pipFrame) SetBodyReader(reader io.Reader, length int64) {
 }
 
 // GetMeta set PipRequest's body input stream.
-func (frame *pipFrame) GetMeta(p reflect.Type) (interface{}, error) {
-	return Deserialize(frame.metaBody, p)
+func (frame *pipFrame) GetMeta(initialObj interface{}) error {
+	return DeserializeFromObject(frame.headerBody, initialObj)
 }
 
 // Pip is a tcp pipe manager which controls the reception and sending of frames.
@@ -46,10 +51,21 @@ type Pip struct {
 	Conn net.Conn
 }
 
+// Close close the Pip.
+func (pip *Pip) Close() {
+	if pip.Conn != nil {
+		pip.Close()
+	}
+}
+
 // Receive receives a frame by it's pip.
+// metaObject is an interface which will be used to load header data,
+// handler is a callback function with which you can handle a data frame,
+// parameter filledMetaObject of function handler and metaObject are the same object.
+// filledHeaderObject is data-filled header Object.
 func (pip *Pip) Receive(
-	metaType reflect.Type,
-	handler func(meta interface{}, bodyReader io.Reader, bodyLength int64) error,
+	headerObject interface{},
+	handler func(filledHeaderObject interface{}, bodyReader io.Reader, bodyLength int64) error,
 ) error {
 	metaLenBytes := make([]byte, frameHeadSize)
 	if _, err := io.ReadFull(pip.Conn, metaLenBytes); err != nil {
@@ -67,17 +83,17 @@ func (pip *Pip) Receive(
 	}
 	frame := &pipFrame{
 		frameHead:  append(metaLenBytes, bodyLenBytes...),
-		metaBody:   metaBs,
+		headerBody: metaBs,
 		bodyLength: bodyLen,
 	}
-	metaObject, err := frame.GetMeta(metaType)
+	err := frame.GetMeta(headerObject)
 	if err != nil {
 		return err
 	}
 	if bodyLen > 0 {
-		handler(metaObject, io.LimitReader(pip.Conn, bodyLen), bodyLen)
+		handler(headerObject, io.LimitReader(pip.Conn, bodyLen), bodyLen)
 	} else {
-		handler(metaObject, nil, 0)
+		handler(headerObject, nil, 0)
 	}
 	return nil
 }
@@ -85,14 +101,14 @@ func (pip *Pip) Receive(
 // Send sends a frame by it's pip.
 func (pip *Pip) Send(meta interface{}, bodyReader io.Reader, bodyLength int64) error {
 	frame := &pipFrame{
-		Meta: meta,
+		Header: meta,
 	}
 	frame.SetBodyReader(bodyReader, bodyLength)
 	autoFillFrame(frame)
 	if _, err := pip.Conn.Write(frame.frameHead); err != nil {
 		return err
 	}
-	if _, err := pip.Conn.Write(frame.metaBody); err != nil {
+	if _, err := pip.Conn.Write(frame.headerBody); err != nil {
 		return err
 	}
 	if frame.bodyLength > 0 && frame.bodyReader != nil {
@@ -109,19 +125,24 @@ func Serialize(obj interface{}) ([]byte, error) {
 }
 
 // Deserialize deserialize an byte array to an interface by type.
-func Deserialize(data []byte, p reflect.Type) (interface{}, error) {
+func DeserializeFromType(data []byte, p reflect.Type) (interface{}, error) {
 	o := reflect.New(p).Interface()
 	err := json.Unmarshal(data, &o)
 	return o, err
 }
 
+// Deserialize deserialize an byte array to an interface by type.
+func DeserializeFromObject(data []byte, obj interface{}) error {
+	return json.Unmarshal(data, &obj)
+}
+
 // autoFillFrame fills frame head bytes and meta body bytes.
 func autoFillFrame(frame *pipFrame) error {
-	metaBs, err := Serialize(frame.Meta)
+	metaBs, err := Serialize(frame.Header)
 	if err != nil {
 		return err
 	}
-	frame.metaBody = metaBs
+	frame.headerBody = metaBs
 	frameHead := make([]byte, frameHeadSize*2)
 	ConvertLen2Bytes(int64(len(metaBs)), frameHead[0:frameHeadSize])
 	ConvertLen2Bytes(frame.bodyLength, frameHead[frameHeadSize:])
