@@ -3,7 +3,6 @@ package gpip
 import (
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"github.com/json-iterator/go"
 	"io"
 	"net"
@@ -15,8 +14,8 @@ const (
 	frameHeadSize = 8
 )
 
-// PipFrame defines a Pip request instance.
-type PipFrame struct {
+// pipFrame defines a pipe request instance.
+type pipFrame struct {
 	frameHead  []byte
 	Meta       interface{}
 	metaBody   []byte
@@ -25,7 +24,7 @@ type PipFrame struct {
 }
 
 // SetBodyReader set PipRequest's body input stream.
-func (frame *PipFrame) SetBodyReader(reader io.Reader, length int64) {
+func (frame *pipFrame) SetBodyReader(reader io.Reader, length int64) {
 	if length < 0 {
 		panic("body length must be positive number")
 	}
@@ -34,51 +33,57 @@ func (frame *PipFrame) SetBodyReader(reader io.Reader, length int64) {
 }
 
 // GetMeta set PipRequest's body input stream.
-func (frame *PipFrame) GetMeta(p reflect.Type) (interface{}, error) {
+func (frame *pipFrame) GetMeta(p reflect.Type) (interface{}, error) {
 	return Deserialize(frame.metaBody, p)
 }
 
 // Pip is a tcp pipe manager which controls the reception and sending of frames.
 type Pip struct {
-	Conn              net.Conn
-	BodyReaderHandler func(frame *PipFrame, bodyLength int64, bodyReader io.Reader) error
+	Conn net.Conn
 }
 
 // Receive receives a frame by it's pip.
-func (pip *Pip) Receive() (*PipFrame, error) {
+func (pip *Pip) Receive(
+	metaType reflect.Type,
+	handler func(meta interface{}, bodyReader io.Reader, bodyLength int64) error,
+) error {
 	metaLenBytes := make([]byte, frameHeadSize)
 	if _, err := io.ReadFull(pip.Conn, metaLenBytes); err != nil {
-		return nil, err
+		return err
 	}
 	bodyLenBytes := make([]byte, frameHeadSize)
 	if _, err := io.ReadFull(pip.Conn, bodyLenBytes); err != nil {
-		return nil, err
+		return err
 	}
 	metaLen := ConvertBytes2Len(&metaLenBytes)
 	bodyLen := ConvertBytes2Len(&bodyLenBytes)
 	metaBs := make([]byte, metaLen)
 	if _, err := io.ReadFull(pip.Conn, metaBs); err != nil {
-		return nil, err
+		return err
 	}
-	frame := &PipFrame{
+	frame := &pipFrame{
 		frameHead:  append(metaLenBytes, bodyLenBytes...),
 		metaBody:   metaBs,
 		bodyLength: bodyLen,
 	}
-	if bodyLen > 0 {
-		if pip.BodyReaderHandler == nil {
-			return nil, errors.New("no body reader handler provided")
-		}
-		err := pip.BodyReaderHandler(frame, bodyLen, io.LimitReader(pip.Conn, bodyLen))
-		if err != nil {
-			return nil, err
-		}
+	metaObject, err := frame.GetMeta(metaType)
+	if err != nil {
+		return err
 	}
-	return frame, nil
+	if bodyLen > 0 {
+		handler(metaObject, io.LimitReader(pip.Conn, bodyLen), bodyLen)
+	} else {
+		handler(metaObject, nil, 0)
+	}
+	return nil
 }
 
 // Send sends a frame by it's pip.
-func (pip *Pip) Send(frame *PipFrame) error {
+func (pip *Pip) Send(meta interface{}, bodyReader io.Reader, bodyLength int64) error {
+	frame := &pipFrame{
+		Meta: meta,
+	}
+	frame.SetBodyReader(bodyReader, bodyLength)
 	autoFillFrame(frame)
 	if _, err := pip.Conn.Write(frame.frameHead); err != nil {
 		return err
@@ -107,7 +112,7 @@ func Deserialize(data []byte, p reflect.Type) (interface{}, error) {
 }
 
 // autoFillFrame fills frame head bytes and meta body bytes.
-func autoFillFrame(frame *PipFrame) error {
+func autoFillFrame(frame *pipFrame) error {
 	metaBs, err := Serialize(frame.Meta)
 	if err != nil {
 		return err
