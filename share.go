@@ -1,6 +1,6 @@
+// Copyright (C) 2019 tisnyo <tisnyo@gmail.com>.
 //
 // This file contains some common functions.
-//
 package gox
 
 import (

@@ -1,6 +1,6 @@
+// Copyright (C) 2019 tisnyo <tisnyo@gmail.com>.
 //
 // This file simulate try-catch structure.
-//
 package gox
 
 // Try simulate try catch

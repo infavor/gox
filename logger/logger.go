@@ -1,3 +1,6 @@
+// Copyright (C) 2019 tisnyo <tisnyo@gmail.com>.
+//
+// package logger is used for initializing logrus.
 package logger
 
 import (

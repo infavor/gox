@@ -1,3 +1,7 @@
+// Copyright (C) 2019 tisnyo <tisnyo@gmail.com>.
+//
+// A Pip can used for frame data transfer.
+// It can transfer text meta content and byte content such as file.
 package gpip
 
 import (

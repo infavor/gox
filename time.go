@@ -1,6 +1,6 @@
+// Copyright (C) 2019 tisnyo <tisnyo@gmail.com>.
 //
-// This file provides some functions about time.
-//
+// This file provides some functions about time operation.
 package gox
 
 import (
