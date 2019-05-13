@@ -54,7 +54,7 @@ type Pip struct {
 // Close close the Pip.
 func (pip *Pip) Close() {
 	if pip.Conn != nil {
-		pip.Close()
+		pip.Conn.Close()
 	}
 }
 
