@@ -82,9 +82,9 @@ func (pool *pool) execute(task func()) {
 	defer func() {
 		pool.updateActiveTaskSize(-1)
 		pool.cha <- 1
-		/*if err := recover(); err != nil {
+		if err := recover(); err != nil {
 			// error
-		}*/
+		}
 	}()
 	task()
 }
