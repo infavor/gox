@@ -40,17 +40,28 @@ func New(coreSize int, maxWait int) *pool {
 
 // Push push a new task into waiting list
 func (pool *pool) Push(task func()) error {
-	pool.listPushLock.Lock()
-	defer pool.listPushLock.Unlock()
 	if pool.waitingList.Len() == pool.maxWait {
 		return errors.New("pool is full")
 	}
 	defer func() {
 		recover()
 	}()
-	pool.waitingList.PushBack(task)
+	pool.listOperation(true, task)
 	if pool.waitingList.Len() > 0 && pool.updateActiveTaskSize(0) < pool.coreSize {
 		pool.cha <- 1
+	}
+	return nil
+}
+
+func (pool *pool) listOperation(push bool, work func()) func() {
+	pool.listPushLock.Lock()
+	defer pool.listPushLock.Unlock()
+	if push {
+		pool.waitingList.PushBack(work)
+		return nil
+	}
+	if pool.waitingList.Len() > 0 {
+		return pool.waitingList.Remove(pool.waitingList.Front()).(func())
 	}
 	return nil
 }
@@ -62,7 +73,7 @@ func (pool *pool) fetchTask() func() {
 	for pool.waitingList.Len() == 0 || pool.updateActiveTaskSize(0) >= pool.coreSize {
 		<-pool.cha
 	}
-	return pool.waitingList.Remove(pool.waitingList.Front()).(func())
+	return pool.listOperation(false, nil)
 }
 
 // updateActiveTaskSize update current pool's active task size.
