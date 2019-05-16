@@ -15,7 +15,8 @@ type pool struct {
 	coreSize       int
 	maxWait        int
 	activeTaskSize int
-	listLock       *sync.Mutex
+	listPushLock   *sync.Mutex
+	listFetchLock  *sync.Mutex
 	numLock        *sync.Mutex
 	cha            chan int
 	waitingList    *list.List
@@ -27,7 +28,8 @@ func New(coreSize int, maxWait int) *pool {
 		coreSize:       coreSize,
 		maxWait:        maxWait,
 		activeTaskSize: 0,
-		listLock:       new(sync.Mutex),
+		listPushLock:   new(sync.Mutex),
+		listFetchLock:  new(sync.Mutex),
 		numLock:        new(sync.Mutex),
 		cha:            make(chan int),
 		waitingList:    list.New(),
@@ -38,6 +40,8 @@ func New(coreSize int, maxWait int) *pool {
 
 // Push push a new task into waiting list
 func (pool *pool) Push(task func()) error {
+	pool.listPushLock.Lock()
+	defer pool.listPushLock.Unlock()
 	if pool.waitingList.Len() == pool.maxWait {
 		return errors.New("pool is full")
 	}
@@ -50,8 +54,8 @@ func (pool *pool) Push(task func()) error {
 
 // Push push a new task into waiting list
 func (pool *pool) fetchTask() func() {
-	pool.listLock.Lock()
-	defer pool.listLock.Unlock()
+	pool.listFetchLock.Lock()
+	defer pool.listFetchLock.Unlock()
 	for pool.waitingList.Len() == 0 || pool.updateActiveTaskSize(0) >= pool.coreSize {
 		<-pool.cha
 	}
