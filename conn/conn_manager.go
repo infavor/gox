@@ -48,12 +48,12 @@ func getServerConnPool(server *Server) *pool {
 }
 
 // GetConnection tries to get a connection from it's connection pool.
-func GetConnection(server *Server) (net.Conn, error) {
+func GetConnection(server *Server) (*net.Conn, error) {
 	return getServerConnPool(server).GetConnection()
 }
 
 // ReturnConnection returns connection to it's connection pool.
-func ReturnConnection(server *Server, conn net.Conn, broken bool) {
+func ReturnConnection(server *Server, conn *net.Conn, broken bool) {
 	p := getServerConnPool(server)
 	if broken {
 		p.ReturnBrokenConnection(conn)

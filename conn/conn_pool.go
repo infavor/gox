@@ -7,6 +7,7 @@ package conn
 import (
 	"container/list"
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 	"sync"
@@ -52,21 +53,22 @@ func NewPool(size int, connFactory *ConnectionFactory) *pool {
 }
 
 // createConn creates a connection.
-func (fac *ConnectionFactory) createConn() (net.Conn, error) {
+func (fac *ConnectionFactory) createConn() (*net.Conn, error) {
+	fmt.Println("create a new conn......")
 	d := net.Dialer{Timeout: fac.DialogTimeout}
 	conn, err := d.Dial("tcp", fac.server.Host+":"+strconv.Itoa(fac.server.Port))
 	if err != nil {
 		return nil, err
 	}
-	return conn, nil
+	return &conn, nil
 }
 
 // GetConnection gets a connection from pool,
-func (p *pool) GetConnection() (net.Conn, error) {
+func (p *pool) GetConnection() (*net.Conn, error) {
 	p.listLock.Lock()
 	defer p.listLock.Unlock()
 	if p.connList.Len() > 0 {
-		return p.connList.Remove(p.connList.Front()).(net.Conn), nil
+		return p.connList.Remove(p.connList.Front()).(*net.Conn), nil
 	}
 	if p.currentSize >= p.maxSize {
 		return nil, errors.New("connection pool is full")
@@ -80,7 +82,7 @@ func (p *pool) GetConnection() (net.Conn, error) {
 }
 
 // ReturnConnection returns a healthy connection
-func (p *pool) ReturnConnection(conn net.Conn) {
+func (p *pool) ReturnConnection(conn *net.Conn) {
 	p.listLock.Lock()
 	defer p.listLock.Unlock()
 	if conn != nil {
@@ -89,9 +91,10 @@ func (p *pool) ReturnConnection(conn net.Conn) {
 }
 
 // ReturnBrokenConnection returns a broken connection.
-func (p *pool) ReturnBrokenConnection(conn net.Conn) {
+func (p *pool) ReturnBrokenConnection(conn *net.Conn) {
+
 	if conn != nil {
-		conn.Close()
+		(*conn).Close()
 		conn = nil
 	}
 }
