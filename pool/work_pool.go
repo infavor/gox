@@ -45,6 +45,9 @@ func (pool *pool) Push(task func()) error {
 	if pool.waitingList.Len() == pool.maxWait {
 		return errors.New("pool is full")
 	}
+	defer func() {
+		recover()
+	}()
 	pool.waitingList.PushBack(task)
 	if pool.waitingList.Len() > 0 && pool.updateActiveTaskSize(0) < pool.coreSize {
 		pool.cha <- 1
