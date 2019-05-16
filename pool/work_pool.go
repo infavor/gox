@@ -12,27 +12,29 @@ import (
 
 // pool is a task pool which can limit the number of concurrent task.
 type pool struct {
-	coreSize       int
-	maxWait        int
-	activeTaskSize int
-	listPushLock   *sync.Mutex
-	listFetchLock  *sync.Mutex
-	numLock        *sync.Mutex
-	cha            chan int
-	waitingList    *list.List
+	coreSize          int
+	maxWait           int
+	activeTaskSize    int
+	listPushLock      *sync.Mutex
+	listOperationLock *sync.Mutex
+	listFetchLock     *sync.Mutex
+	numLock           *sync.Mutex
+	cha               chan int
+	waitingList       *list.List
 }
 
 // New creates a task pool.
 func New(coreSize int, maxWait int) *pool {
 	p := &pool{
-		coreSize:       coreSize,
-		maxWait:        maxWait,
-		activeTaskSize: 0,
-		listPushLock:   new(sync.Mutex),
-		listFetchLock:  new(sync.Mutex),
-		numLock:        new(sync.Mutex),
-		cha:            make(chan int),
-		waitingList:    list.New(),
+		coreSize:          coreSize,
+		maxWait:           maxWait,
+		activeTaskSize:    0,
+		listPushLock:      new(sync.Mutex),
+		listFetchLock:     new(sync.Mutex),
+		listOperationLock: new(sync.Mutex),
+		numLock:           new(sync.Mutex),
+		cha:               make(chan int),
+		waitingList:       list.New(),
 	}
 	go p.taskWatcher()
 	return p
@@ -40,6 +42,8 @@ func New(coreSize int, maxWait int) *pool {
 
 // Push push a new task into waiting list
 func (pool *pool) Push(task func()) error {
+	pool.listPushLock.Lock()
+	defer pool.listPushLock.Unlock()
 	if pool.waitingList.Len() == pool.maxWait {
 		return errors.New("pool is full")
 	}
@@ -54,8 +58,8 @@ func (pool *pool) Push(task func()) error {
 }
 
 func (pool *pool) listOperation(push bool, work func()) func() {
-	pool.listPushLock.Lock()
-	defer pool.listPushLock.Unlock()
+	pool.listOperationLock.Lock()
+	defer pool.listOperationLock.Unlock()
 	if push {
 		pool.waitingList.PushBack(work)
 		return nil
