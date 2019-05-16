@@ -14,6 +14,11 @@ var (
 	defaultMaxConn = 50
 )
 
+func init() {
+	poolManager = make(map[string]*pool)
+	config = make(map[string]int)
+}
+
 // SetDefaultMaxConnSize sets default max connection size.
 func SetDefaultMaxConnSize(maxConn int) {
 	defaultMaxConn = maxConn
