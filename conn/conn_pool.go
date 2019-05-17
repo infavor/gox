@@ -61,12 +61,12 @@ func NewPool(size int, connFactory *ConnectionFactory) *pool {
 
 // createConn creates a connection.
 func (fac *ConnectionFactory) createConn() (*net.Conn, error) {
-	fmt.Println("create a new conn......")
 	d := net.Dialer{Timeout: fac.DialogTimeout}
 	conn, err := d.Dial("tcp", fac.Server.Host+":"+strconv.Itoa(fac.Server.Port))
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("created new conn:", &conn)
 	return &conn, nil
 }
 
@@ -123,12 +123,17 @@ func (s *Server) GetConnectionString() string {
 // ReturnBrokenConnection returns a broken connection.
 func (p *pool) expireConnections() {
 	t := time.NewTicker(time.Minute)
+	now := time.Now()
 	for {
-		for ele := p.connList.Front(); ele != nil; ele = ele.Next() {
-			c := ele.Value.(*net.Conn)
-			p.connList.Remove(ele)
-			fmt.Println("expire connection:", c)
-			p.ReturnBrokenConnection(c)
+		var next *list.Element
+		for e := p.connList.Front(); e != nil; e = next {
+			c := e.Value.(*net.Conn)
+			next = e.Next()
+			if p.registeredConnMap[c].Unix() <= now.Unix() {
+				p.connList.Remove(e)
+				fmt.Println("expire connection:", c)
+				p.ReturnBrokenConnection(c)
+			}
 		}
 		<-t.C
 	}
