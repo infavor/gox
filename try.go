@@ -6,7 +6,7 @@ package gox
 // Try simulate try catch
 func Try(f func(), catcher func(interface{})) {
 	defer func() {
-		if err := recover(); err != nil {
+		if err := recover(); err != nil && catcher != nil {
 			catcher(err)
 		}
 	}()
