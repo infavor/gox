@@ -122,9 +122,9 @@ func (s *Server) GetConnectionString() string {
 
 // ReturnBrokenConnection returns a broken connection.
 func (p *pool) expireConnections() {
-	t := time.NewTicker(time.Minute)
-	now := time.Now()
+	t := time.NewTicker(p.connFactory.ConnMaxIdleTime)
 	for {
+		now := time.Now()
 		var next *list.Element
 		for e := p.connList.Front(); e != nil; e = next {
 			c := e.Value.(*net.Conn)
