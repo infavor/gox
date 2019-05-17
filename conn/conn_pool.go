@@ -48,11 +48,12 @@ func NewPool(size int, connFactory *ConnectionFactory) *pool {
 	}
 
 	p := &pool{
-		maxSize:     size,
-		currentSize: 0,
-		connList:    list.New(),
-		listLock:    new(sync.Mutex),
-		connFactory: connFactory,
+		maxSize:           size,
+		currentSize:       0,
+		connList:          list.New(),
+		listLock:          new(sync.Mutex),
+		connFactory:       connFactory,
+		registeredConnMap: make(map[*net.Conn]time.Time),
 	}
 	go p.expireConnections()
 	return p
