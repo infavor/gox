@@ -66,7 +66,7 @@ func (fac *ConnectionFactory) createConn() (*net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("created new conn:", &conn)
+	fmt.Println(time.Now().UTC(), " created new conn:", &conn)
 	return &conn, nil
 }
 
@@ -131,7 +131,7 @@ func (p *pool) expireConnections() {
 			next = e.Next()
 			if p.registeredConnMap[c].Unix() <= now.Unix() {
 				p.connList.Remove(e)
-				fmt.Println("expire connection:", c)
+				fmt.Println(now.UTC(), " expire connection:", c)
 				p.ReturnBrokenConnection(c)
 			}
 		}
