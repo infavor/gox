@@ -102,3 +102,22 @@ func Md5Sum(input ...string) string {
 	sMd5 := hex.EncodeToString(sliceCipherStr)
 	return sMd5
 }
+
+// ControlRange controls a variable's value in a value range.
+// returns defaultValue if the range not provided or the value is not in the range,
+func ControlRange(value interface{}, defaultValue interface{}, rangeValues ...interface{}) interface{} {
+	if rangeValues == nil || len(rangeValues) == 0 {
+		return defaultValue
+	}
+	in := false
+	for _, v := range rangeValues {
+		if v == value {
+			in = true
+			break
+		}
+	}
+	if in {
+		return value
+	}
+	return defaultValue
+}
