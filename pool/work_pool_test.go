@@ -4,12 +4,13 @@ import (
 	"../pool"
 	"fmt"
 	"testing"
-	"time"
 )
 
 func Test1(t *testing.T) {
 	p := pool.New(97, 100)
-	for i := 0; i < 100; i++ {
+	var i = 0
+	for {
+		i++
 		tmp := i
 		err := p.Push(func() {
 			testTask(tmp)
@@ -23,6 +24,5 @@ func Test1(t *testing.T) {
 }
 
 func testTask(taskId int) {
-	time.Sleep(time.Second * 1)
 	fmt.Println("execute task ", taskId)
 }
