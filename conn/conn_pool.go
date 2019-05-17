@@ -97,7 +97,7 @@ func (p *pool) ReturnConnection(c *net.Conn) {
 		p.listLock.Unlock()
 	}()
 	if c != nil {
-		p.registeredConnMap[c] = time.Now().Add(time.Minute * 5)
+		p.registeredConnMap[c] = time.Now().Add(p.connFactory.ConnMaxIdleTime)
 		p.connList.PushBack(c)
 	}
 }
