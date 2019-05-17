@@ -31,7 +31,7 @@ func InitServerSettings(server *Server, maxConn int) {
 	config[s] = maxConn
 	if poolManager[s] == nil {
 		poolManager[s] = NewPool(maxConn, &ConnectionFactory{
-			server:        server,
+			Server:        server,
 			DialogTimeout: time.Second * 15,
 		})
 	}
