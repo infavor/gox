@@ -3,29 +3,31 @@ package http
 import (
 	"bytes"
 	"container/list"
-	"crypto/md5"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
+	"fmt"
 	"hash"
 	"io"
 	"net/http"
 	"os"
 	"regexp"
-	"strings"
 )
 
 const (
-	ContentDispositionPattern = "^Content-Disposition: form-data; name=\"([^\"]*)\"(; filename=\"([^\"]*)\".*)?$"
 	ContentTypePattern        = "^multipart/form-data; boundary=(.*)$"
+	ContentDispositionPattern = "^Content-Disposition: form-data; name=\"([^\"]*)\"(; filename=\"([^\"]*)\".*)?$"
+)
+
+var (
+	RegexContentTypePattern        = regexp.MustCompile(ContentTypePattern)
+	RegexContentDispositionPattern = regexp.MustCompile(ContentDispositionPattern)
 )
 
 type FileFormReader struct {
 	request          *http.Request
-	unReadableBuffer           *bytes.Buffer
+	unReadableBuffer *bytes.Buffer
 	atomByte         []byte
 	newLineBytesPair []byte
-	buffer		 []byte
+	buffer           []byte
 	newLineBuffer    *bytes.Buffer
 }
 
@@ -70,9 +72,17 @@ func (reader *FileFormReader) Read(buff []byte) (int, error) {
 var newLineMarker = []byte{13, 10}
 
 type FileUploadHandler struct {
-	writer      http.ResponseWriter
-	request     *http.Request
-	onTextField func((name string, value string)
+	writer               http.ResponseWriter
+	request              *http.Request
+	params               map[string]*list.List
+	boundary             string
+	paraBoundary         string
+	endParaBoundary      string
+	separator            []byte
+	separatorTestBuffer  []byte
+	separatorMergeBuffer []byte
+	onTextField          func(name string, value string)
+	onFileField          func(name string, value string)
 }
 
 type StageUploadStatus struct {
@@ -87,18 +97,16 @@ type StageUploadStatus struct {
 	path          string
 }
 
-
 // beginUpload begin to read request entity and parse form field
 func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
 	var formReader = &FileFormReader{
-		request: handler.request,
-		unReadableBuffer:  new(bytes.Buffer),
-		atomByte: make([]byte, 1),
+		request:          handler.request,
+		unReadableBuffer: new(bytes.Buffer),
+		atomByte:         make([]byte, 1),
 		newLineBytesPair: make([]byte, 2),
-		newLineBuffer: new(bytes.Buffer),
-		buffer:make([]byte, 1024*30),
+		newLineBuffer:    new(bytes.Buffer),
+		buffer:           make([]byte, 1024*30),
 	}
-
 	var ret = &HttpUploadResponse{
 		FormData: make(map[string][]string),
 	}
@@ -108,27 +116,30 @@ func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
 
 	headerContentType := handler.request.Header["Content-Type"]
 	contentType := ""
-	if headerContentType != nil || len(headerContentType) == 0 {
+	if headerContentType != nil && len(headerContentType) > 0 {
 		contentType = headerContentType[0]
 	}
-	if mat, _ := regexp.Match(ContentTypePattern, []byte(contentType)); mat {
-		boundary := regexp.MustCompile(ContentTypePattern).ReplaceAllString(contentType, "${1}")
-		paraSeparator := "--" + boundary
-		endSeparator := "--" + boundary + "--"
+	if RegexContentTypePattern.Match([]byte(contentType)) {
+		handler.boundary = RegexContentDispositionPattern.ReplaceAllString(contentType, "${1}")
+		handler.paraBoundary = "--" + handler.boundary
+		handler.endParaBoundary = "--" + handler.boundary + "--"
+		handler.separator = []byte("\r\n" + handler.boundary)
+		handler.separatorTestBuffer = make([]byte, len(handler.separator))
+		handler.separatorMergeBuffer = make([]byte, len(handler.separator)*2)
 		for {
-			line, e := readNextLine(formReader)
-			if e != nil {
-				return nil, e
+			line, err := readNextLine(formReader)
+			if err != nil {
+				return nil, err
 			}
 			// if it is paraSeparator, then start read new form text field or file field
-			if paraSeparator == line {
-				contentDisposition, e1 := readNextLine(formReader)
-				if e1 != nil {
-					return nil, e1
+			if handler.paraBoundary == line {
+				contentDisposition, err := readNextLine(formReader)
+				if err != nil {
+					return nil, err
 				} else {
-					mat1, e := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
-					if e != nil {
-						return nil, e
+					mat1, err := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
+					if err != nil {
+						return nil, err
 					}
 					paramName := ""
 					paramValue := ""
@@ -136,51 +147,49 @@ func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
 						paramName = regexp.MustCompile(ContentDispositionPattern).ReplaceAllString(contentDisposition, "${1}")
 					}
 
-					paramContentType, e2 := readNextLine(formReader)
-					if e2 != nil {
-						return nil, e2
+					paramContentType, err := readNextLine(formReader)
+					if err != nil {
+						return nil, err
 					} else {
 						if paramContentType == "" { // read text parameter field
-							param, e3 := readNextLine(formReader)
-							if e3 != nil {
-								return nil, e3
+							param, err := readNextLine(formReader)
+							if err != nil {
+								return nil, err
 							} else {
 								paramValue = param
 								handler.onTextField(paramName, paramValue)
 							}
 						} else { // parse content type
-							mat2, _ := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
-							if e != nil {
-								return nil, e
+							mat2, err := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
+							if err != nil {
+								return nil, err
 							}
 							fileName := ""
 							if mat2 {
 								fileName = regexp.MustCompile(ContentDispositionPattern).ReplaceAllString(contentDisposition, "${3}")
 							}
+							fmt.Println(fileName)
 
-							_, e3 := readNextLine(formReader)
-							if e3 != nil {
-								return nil, e3
+							_, err = readNextLine(formReader) // read blank line
+							if err != nil {
+								return nil, err
 							} else { // read file body
-								stageUploadStatus, e4 := readFileBody(formReader, paraSeparator)
-								if e4 != nil {
-									return nil, e4
+								err := handler.readFileBody(formReader)
+								if err != nil {
+									return nil, err
 								}
-								fileStages.PushBack(stageUploadStatus)
-								stageUploadStatus.index = fileIndex
-								handler.onTextField(paramName, stageUploadStatus.path)
-								stageUploadStatus.fileName = fileName
+								handler.onTextField(paramName, "")
 								fileIndex++
 							}
 						}
 					}
 
 				}
-			} else if endSeparator == line {
+			} else if handler.endParaBoundary == line {
 				// form stream hit end
 				break
 			} else {
-				logger.Error("unknown line")
+				fmt.Println("unknown line")
 			}
 		}
 	}
@@ -228,143 +237,65 @@ func readNextLine(reader *FileFormReader) (string, error) {
 		reader.newLineBytesPair[1] = reader.atomByte[0]
 		reader.newLineBuffer.Write(reader.atomByte)
 		if bytes.Equal(newLineMarker, reader.newLineBytesPair) {
-			return string(reader.newLineBuffer.Bytes()[0 : reader.newLineBuffer.Len() - 2]), nil
+			return string(reader.newLineBuffer.Bytes()[0 : reader.newLineBuffer.Len()-2]), nil
 		}
 	}
 }
 
 // readFileBody reads a file body part.
-func readFileBody(reader *FileFormReader, separator string) (*StageUploadStatus, error) {
-	if oe != nil {
-		return nil, oe
-	}
-	stateUploadStatus := &StageUploadStatus{
-		readBodySize:  0,
-		sliceReadSize: 0,
-		sliceMd5:      md5.New(),
-		md:            md,
-		fileParts:     list.New(),
-		out:           out,
-	}
-	separator = "\r\n" + separator
-	buff2, _ := bridgev2.MakeBytes(int64(len(separator)), true, 1024, true)
-	tail, _ := bridgev2.MakeBytes(int64(len(separator)*2), true, 1024, true)
+func (handler *FileUploadHandler) readFileBody(reader *FileFormReader) error {
+	separatorLength := len(handler.separator)
 	for {
-		len1, e1 := reader.Read(reader.buffer)
-		if e1 != nil {
-			if e1 != io.EOF {
-				return nil, e1
-			}
+		len1, err := reader.Read(reader.buffer)
+		if err != nil && err != io.EOF {
+			return err
 		}
 		if len1 == 0 {
-			return nil, errors.New("read file body failed1")
+			return errors.New("read file body failed[0]")
 		}
 		// whether buff1 contains separator
-		i1 := bytes.Index(reader.buffer, []byte(separator))
-		if i1 != -1 {
-			out.Write(reader.buffer[0:i1])
-			e8 := handleStagePartFile(reader.buffer[0:i1], stateUploadStatus)
-			if e8 != nil {
-				return nil, e8
-			}
-			reader.Unread(reader.buffer[i1+2 : len1]) // skip "\r\n"
+		pos := bytes.Index(reader.buffer, handler.separator)
+		if pos != -1 {
+			// out.Write(reader.buffer[0:pos])
+			// write bytes......
+			///-----------------
+			reader.Unread(reader.buffer[pos+2 : len1]) // skip "\r\n"
 			break
 		} else {
-			len2, e2 := reader.Read(buff2)
-			if e2 != nil {
-				if e2 != io.EOF {
-					return nil, e2
+			len2, err := reader.Read(handler.separatorTestBuffer)
+			if err != nil {
+				if err != io.EOF {
+					return err
 				}
 			}
 			if len2 == 0 {
-				return nil, errors.New("read file body failed2")
+				return errors.New("read file body failed[1]")
 			}
 			// []byte tail is last bytes of buff1 and first bytes of buff2 in case broken separator.
-			if len1 >= len(separator) {
-				ByteCopy(tail, 0, len(separator), reader.buffer[len1-len(separator):len1])
+			//
+			if len1 >= separatorLength {
+				ByteCopy(handler.separatorMergeBuffer, 0, separatorLength, reader.buffer[len1-separatorLength:len1])
 			}
-			if len2 >= len(separator) {
-				ByteCopy(tail, len(separator), len(tail), buff2[0:len(separator)])
+			if len2 >= separatorLength {
+				ByteCopy(handler.separatorMergeBuffer, separatorLength, len(handler.separatorMergeBuffer), handler.separatorTestBuffer[0:separatorLength])
 			}
 
-			i2 := bytes.Index(tail, []byte(separator))
+			i2 := bytes.Index(handler.separatorMergeBuffer, handler.separator)
 			if i2 != -1 {
-				if i2 < len(separator) {
-					e8 := handleStagePartFile(reader.buffer[0:len1-i2], stateUploadStatus)
-					if e8 != nil {
-						return nil, e8
-					}
+				if i2 < separatorLength {
 					reader.Unread(reader.buffer[len1-i2+2 : len1])
-					reader.Unread(buff2[0:len2])
+					reader.Unread(handler.separatorTestBuffer[0:len2])
 				} else {
-					e8 := handleStagePartFile(reader.buffer[0:len1], stateUploadStatus)
-					if e8 != nil {
-						return nil, e8
-					}
-					reader.Unread(buff2[i2-len(separator)+2 : len2])
+					reader.Unread(handler.separatorTestBuffer[i2-separatorLength+2 : len2])
 				}
 				break
 			} else {
-				e8 := handleStagePartFile(reader.buffer[0:len1], stateUploadStatus)
-				if e8 != nil {
-					return nil, e8
-				}
-				reader.Unread(buff2[0:len2])
+				reader.Unread(handler.separatorTestBuffer[0:len2])
 			}
 		}
 	}
-	stateUploadStatus.out.Close()
-	if stateUploadStatus.sliceReadSize > 0 {
-		sliceCipherStr := stateUploadStatus.sliceMd5.Sum(nil)
-		sMd5 := hex.EncodeToString(sliceCipherStr)
-		stateUploadStatus.sliceMd5.Reset()
-		e10 := libcommon.MoveTmpFileTo(sMd5, stateUploadStatus.out)
-		if e10 != nil {
-			return nil, e10
-		}
-
-		tmpPart := &app.PartDO{Md5: sMd5, Size: stateUploadStatus.sliceReadSize}
-		stateUploadStatus.fileParts.PushBack(tmpPart)
-		app.UpdateDiskUsage(stateUploadStatus.sliceReadSize)
-	}
-	sliceCipherStr := md.Sum(nil)
-	sMd5 := hex.EncodeToString(sliceCipherStr)
-
-	finalFile := &app.FileVO{
-		Md5:        sMd5,
-		PartNumber: stateUploadStatus.fileParts.Len(),
-		Group:      app.Group,
-		Instance:   app.InstanceId,
-		Finish:     1,
-		FileSize:   0,
-		Flag:       flag,
-	}
-	parts := make([]app.PartDO, stateUploadStatus.fileParts.Len())
-	index := 0
-	var totalSize int64 = 0
-	for ele := stateUploadStatus.fileParts.Front(); ele != nil; ele = ele.Next() {
-		parts[index] = *ele.Value.(*app.PartDO)
-		totalSize += parts[index].Size
-		index++
-	}
-	finalFile.Parts = parts
-	finalFile.FileSize = totalSize
-	// stoe := libservice.StorageAddFile(sMd5, app.Group, stateUploadStatus.fileParts)
-	stoe := libservicev2.InsertFile(finalFile, nil)
-	if stoe != nil {
-		return nil, stoe
-	}
-	// mark the file is multi part or single part
-	if stateUploadStatus.fileParts.Len() > 1 {
-		stateUploadStatus.path = app.Group + "/" + app.InstanceId + "/M/" + sMd5
-	} else {
-		stateUploadStatus.path = app.Group + "/" + app.InstanceId + "/S/" + sMd5
-	}
-	app.UpdateUploads()
-	return stateUploadStatus, nil
+	return nil
 }
-
-
 
 // ByteCopy copies bytes
 func ByteCopy(src []byte, start int, end int, cp []byte) {
