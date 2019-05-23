@@ -5,19 +5,23 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	"hash"
 	"io"
 	"net/http"
-	"os"
 	"regexp"
 )
+
+type FormType = int
 
 const (
 	ContentTypePattern        = "^multipart/form-data; boundary=(.*)$"
 	ContentDispositionPattern = "^Content-Disposition: form-data; name=\"([^\"]*)\"(; filename=\"([^\"]*)\".*)?$"
+
+	PLAIN FormType = 1
+	FILE  FormType = 2
 )
 
 var (
+	newLineMarker                  = []byte{13, 10}
 	RegexContentTypePattern        = regexp.MustCompile(ContentTypePattern)
 	RegexContentDispositionPattern = regexp.MustCompile(ContentDispositionPattern)
 )
@@ -37,7 +41,7 @@ type FileInfo struct {
 	Path     string `json:"path"`
 }
 
-type HttpUploadResponse struct {
+type UploadResponse struct {
 	Status   string              `json:"status"`   // handler result status
 	FormData map[string][]string `json:"formData"` // form data
 	FileInfo []FileInfo          `json:"fileInfo"` // files info for all uploaded file.
@@ -47,6 +51,7 @@ func (reader *FileFormReader) Unread(read []byte) {
 	reader.unReadableBuffer.Write(read)
 }
 
+// Read reads bytes from stream, if the buffer has bytes remain, read it first, then read from form body.
 func (reader *FileFormReader) Read(buff []byte) (int, error) {
 	// if buffer of FileFormReader has bytes cached before(from Unread()), then read it first.
 	if reader.unReadableBuffer.Len() > 0 {
@@ -69,8 +74,6 @@ func (reader *FileFormReader) Read(buff []byte) (int, error) {
 	return reader.request.Body.Read(buff)
 }
 
-var newLineMarker = []byte{13, 10}
-
 type FileUploadHandler struct {
 	writer               http.ResponseWriter
 	request              *http.Request
@@ -81,25 +84,18 @@ type FileUploadHandler struct {
 	separator            []byte
 	separatorTestBuffer  []byte
 	separatorMergeBuffer []byte
-	onTextField          func(name string, value string)
-	onFileField          func(name string, value string)
-}
-
-type StageUploadStatus struct {
-	readBodySize  uint64
-	sliceReadSize int64
-	md            hash.Hash
-	sliceMd5      hash.Hash
-	fileParts     *list.List
-	fileName      string
-	index         int
-	out           *os.File
-	path          string
+	formReader           *FileFormReader
+	// call when read a plain text field.
+	OnFormField func(name string, value string, formType FormType)
+	// call when about begin to read file body from form, need to provide an io.WriteCloser to write file bytes.
+	OnFileField func(name string) io.WriteCloser
+	// call when a file is end.
+	OnEndFile func(name string, out io.WriteCloser)
 }
 
 // beginUpload begin to read request entity and parse form field
-func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
-	var formReader = &FileFormReader{
+func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
+	handler.formReader = &FileFormReader{
 		request:          handler.request,
 		unReadableBuffer: new(bytes.Buffer),
 		atomByte:         make([]byte, 1),
@@ -107,11 +103,10 @@ func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
 		newLineBuffer:    new(bytes.Buffer),
 		buffer:           make([]byte, 1024*30),
 	}
-	var ret = &HttpUploadResponse{
+	var ret = &UploadResponse{
 		FormData: make(map[string][]string),
 	}
 
-	var fileStages list.List
 	var fileIndex = 0
 
 	headerContentType := handler.request.Header["Content-Type"]
@@ -127,13 +122,13 @@ func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
 		handler.separatorTestBuffer = make([]byte, len(handler.separator))
 		handler.separatorMergeBuffer = make([]byte, len(handler.separator)*2)
 		for {
-			line, err := readNextLine(formReader)
+			line, err := handler.formReader.readNextLine()
 			if err != nil {
 				return nil, err
 			}
 			// if it is paraSeparator, then start read new form text field or file field
 			if handler.paraBoundary == line {
-				contentDisposition, err := readNextLine(formReader)
+				contentDisposition, err := handler.formReader.readNextLine()
 				if err != nil {
 					return nil, err
 				} else {
@@ -147,17 +142,17 @@ func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
 						paramName = regexp.MustCompile(ContentDispositionPattern).ReplaceAllString(contentDisposition, "${1}")
 					}
 
-					paramContentType, err := readNextLine(formReader)
+					paramContentType, err := handler.formReader.readNextLine()
 					if err != nil {
 						return nil, err
 					} else {
 						if paramContentType == "" { // read text parameter field
-							param, err := readNextLine(formReader)
+							param, err := handler.formReader.readNextLine()
 							if err != nil {
 								return nil, err
 							} else {
 								paramValue = param
-								handler.onTextField(paramName, paramValue)
+								handler.OnFormField(paramName, paramValue, PLAIN)
 							}
 						} else { // parse content type
 							mat2, err := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
@@ -170,15 +165,15 @@ func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
 							}
 							fmt.Println(fileName)
 
-							_, err = readNextLine(formReader) // read blank line
+							_, err = handler.formReader.readNextLine() // read blank line
 							if err != nil {
 								return nil, err
 							} else { // read file body
-								err := handler.readFileBody(formReader)
+								handler.OnFormField(paramName, fileName, FILE)
+								err := handler.readFileBody(handler.OnFileField(fileName))
 								if err != nil {
 									return nil, err
 								}
-								handler.onTextField(paramName, "")
 								fileIndex++
 							}
 						}
@@ -206,25 +201,12 @@ func (handler *FileUploadHandler) beginUpload() (*HttpUploadResponse, error) {
 		}
 	}
 
-	fInfo := make([]FileInfo, fileStages.Len())
-	k := 0
-	for ele := fileStages.Front(); ele != nil; ele = ele.Next() {
-		stage := ele.Value.(*StageUploadStatus)
-		info := &FileInfo{
-			Index:    stage.index,
-			FileName: stage.fileName,
-			Path:     stage.path,
-		}
-		fInfo[k] = *info
-		k++
-	}
-	ret.FileInfo = fInfo
 	ret.Status = "success"
 	return ret, nil
 }
 
 // readNextLine reads next form field meta string.
-func readNextLine(reader *FileFormReader) (string, error) {
+func (reader *FileFormReader) readNextLine() (string, error) {
 	for {
 		len, err := reader.Read(reader.atomByte)
 		if err != nil && err != io.EOF {
@@ -243,10 +225,10 @@ func readNextLine(reader *FileFormReader) (string, error) {
 }
 
 // readFileBody reads a file body part.
-func (handler *FileUploadHandler) readFileBody(reader *FileFormReader) error {
+func (handler *FileUploadHandler) readFileBody(out io.WriteCloser) error {
 	separatorLength := len(handler.separator)
 	for {
-		len1, err := reader.Read(reader.buffer)
+		len1, err := handler.formReader.Read(handler.formReader.buffer)
 		if err != nil && err != io.EOF {
 			return err
 		}
@@ -254,15 +236,15 @@ func (handler *FileUploadHandler) readFileBody(reader *FileFormReader) error {
 			return errors.New("read file body failed[0]")
 		}
 		// whether buff1 contains separator
-		pos := bytes.Index(reader.buffer, handler.separator)
+		pos := bytes.Index(handler.formReader.buffer, handler.separator)
 		if pos != -1 {
 			// out.Write(reader.buffer[0:pos])
 			// write bytes......
 			///-----------------
-			reader.Unread(reader.buffer[pos+2 : len1]) // skip "\r\n"
+			handler.formReader.Unread(handler.formReader.buffer[pos+2 : len1]) // skip "\r\n"
 			break
 		} else {
-			len2, err := reader.Read(handler.separatorTestBuffer)
+			len2, err := handler.formReader.Read(handler.separatorTestBuffer)
 			if err != nil {
 				if err != io.EOF {
 					return err
@@ -274,7 +256,7 @@ func (handler *FileUploadHandler) readFileBody(reader *FileFormReader) error {
 			// []byte tail is last bytes of buff1 and first bytes of buff2 in case broken separator.
 			//
 			if len1 >= separatorLength {
-				ByteCopy(handler.separatorMergeBuffer, 0, separatorLength, reader.buffer[len1-separatorLength:len1])
+				ByteCopy(handler.separatorMergeBuffer, 0, separatorLength, handler.formReader.buffer[len1-separatorLength:len1])
 			}
 			if len2 >= separatorLength {
 				ByteCopy(handler.separatorMergeBuffer, separatorLength, len(handler.separatorMergeBuffer), handler.separatorTestBuffer[0:separatorLength])
@@ -283,14 +265,14 @@ func (handler *FileUploadHandler) readFileBody(reader *FileFormReader) error {
 			i2 := bytes.Index(handler.separatorMergeBuffer, handler.separator)
 			if i2 != -1 {
 				if i2 < separatorLength {
-					reader.Unread(reader.buffer[len1-i2+2 : len1])
-					reader.Unread(handler.separatorTestBuffer[0:len2])
+					handler.formReader.Unread(handler.formReader.buffer[len1-i2+2 : len1])
+					handler.formReader.Unread(handler.separatorTestBuffer[0:len2])
 				} else {
-					reader.Unread(handler.separatorTestBuffer[i2-separatorLength+2 : len2])
+					handler.formReader.Unread(handler.separatorTestBuffer[i2-separatorLength+2 : len2])
 				}
 				break
 			} else {
-				reader.Unread(handler.separatorTestBuffer[0:len2])
+				handler.formReader.Unread(handler.separatorTestBuffer[0:len2])
 			}
 		}
 	}
