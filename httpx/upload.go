@@ -2,7 +2,6 @@ package httpx
 
 import (
 	"bytes"
-	"container/list"
 	"errors"
 	"fmt"
 	"io"
@@ -35,18 +34,23 @@ type FileFormReader struct {
 	newLineBuffer    *bytes.Buffer
 }
 
-type FileInfo struct {
-	Index    int    `json:"index"`
-	FileName string `json:"fileName"`
-	Path     string `json:"path"`
+type FileUploadHandler struct {
+	Request              *http.Request
+	paraBoundary         string
+	endParaBoundary      string
+	separator            []byte
+	separatorTestBuffer  []byte
+	separatorMergeBuffer []byte
+	formReader           *FileFormReader
+	// call when read a plain text field.
+	OnFormField func(name string, value string, formType FormType)
+	// call when about begin to read file body from form, need to provide an io.WriteCloser to write file bytes.
+	OnFileField func(name string) io.WriteCloser
+	// call when a file is end.
+	OnEndFile func(name string, out io.WriteCloser)
 }
 
-type UploadResponse struct {
-	Status   string              `json:"status"`   // handler result status
-	FormData map[string][]string `json:"formData"` // form data
-	FileInfo []FileInfo          `json:"fileInfo"` // files info for all uploaded file.
-}
-
+// Unread return extra read bytes for next read.
 func (reader *FileFormReader) Unread(read []byte) {
 	reader.unReadableBuffer.Write(read)
 }
@@ -74,27 +78,8 @@ func (reader *FileFormReader) Read(buff []byte) (int, error) {
 	return reader.request.Body.Read(buff)
 }
 
-type FileUploadHandler struct {
-	Writer               http.ResponseWriter
-	Request              *http.Request
-	params               map[string]*list.List
-	boundary             string
-	paraBoundary         string
-	endParaBoundary      string
-	separator            []byte
-	separatorTestBuffer  []byte
-	separatorMergeBuffer []byte
-	formReader           *FileFormReader
-	// call when read a plain text field.
-	OnFormField func(name string, value string, formType FormType)
-	// call when about begin to read file body from form, need to provide an io.WriteCloser to write file bytes.
-	OnFileField func(name string) io.WriteCloser
-	// call when a file is end.
-	OnEndFile func(name string, out io.WriteCloser)
-}
-
 // beginUpload begin to read request entity and parse form field
-func (handler *FileUploadHandler) BeginUpload() error {
+func (handler *FileUploadHandler) Parse() error {
 	handler.formReader = &FileFormReader{
 		request:          handler.Request,
 		unReadableBuffer: new(bytes.Buffer),
@@ -111,9 +96,9 @@ func (handler *FileUploadHandler) BeginUpload() error {
 		contentType = headerContentType[0]
 	}
 	if RegexContentTypePattern.Match([]byte(contentType)) {
-		handler.boundary = RegexContentTypePattern.ReplaceAllString(contentType, "${1}")
-		handler.paraBoundary = "--" + handler.boundary
-		handler.endParaBoundary = "--" + handler.boundary + "--"
+		boundary := RegexContentTypePattern.ReplaceAllString(contentType, "${1}")
+		handler.paraBoundary = "--" + boundary
+		handler.endParaBoundary = "--" + boundary + "--"
 		handler.separator = []byte("\r\n" + handler.paraBoundary)
 		handler.separatorTestBuffer = make([]byte, len(handler.separator))
 		handler.separatorMergeBuffer = make([]byte, len(handler.separator)*2)

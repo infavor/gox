@@ -7,7 +7,7 @@ Usage:
 ```golang
 import "github.com/hetianyi/gox/cache"
 // apply cache
-cache.Apply(bufferSize, false)
+bc := cache.Apply(bufferSize, false)
 // recache
 defer cache.ReCache(bc)
 // use cache...
