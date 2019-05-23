@@ -158,7 +158,7 @@ func (handler *FileUploadHandler) BeginUpload() error {
 								return err
 							} else { // read file body
 								handler.OnFormField(paramName, fileName, FILE)
-								err := handler.readFileBody(handler.OnFileField(fileName))
+								err := handler.readFileBody(fileName, handler.OnFileField(fileName))
 								if err != nil {
 									return err
 								}
@@ -201,7 +201,7 @@ func (reader *FileFormReader) readNextLine() (string, error) {
 }
 
 // readFileBody reads a file body part.
-func (handler *FileUploadHandler) readFileBody(out io.WriteCloser) error {
+func (handler *FileUploadHandler) readFileBody(fileName string, out io.WriteCloser) error {
 	separatorLength := len(handler.separator)
 	for {
 		len1, err := handler.formReader.Read(handler.formReader.buffer)
@@ -216,6 +216,7 @@ func (handler *FileUploadHandler) readFileBody(out io.WriteCloser) error {
 		if pos != -1 {
 			out.Write(handler.formReader.buffer[0:pos])
 			handler.formReader.Unread(handler.formReader.buffer[pos+2 : len1]) // skip "\r\n"
+			handler.OnEndFile(fileName, out)
 			break
 		} else {
 			len2, err := handler.formReader.Read(handler.separatorTestBuffer)
@@ -244,6 +245,7 @@ func (handler *FileUploadHandler) readFileBody(out io.WriteCloser) error {
 				} else {
 					handler.formReader.Unread(handler.separatorTestBuffer[i2-separatorLength+2 : len2])
 				}
+				handler.OnEndFile(fileName, out)
 				break
 			} else {
 				handler.formReader.Unread(handler.separatorTestBuffer[0:len2])
