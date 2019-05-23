@@ -87,13 +87,16 @@ func (bc *ByteCapsule) Bytes() []byte {
 }
 
 // ApplyResource applies specified type of resource which cached before.
-func ApplyResource(p reflect.Type) interface{} {
+func ApplyResource(p reflect.Type, fallback func() interface{}) interface{} {
 	var bc interface{}
 	cha := cacheResourceContainer[p]
 	select {
 	case bc = <-cha:
 		return bc
 	default:
+		if fallback != nil {
+			return fallback()
+		}
 		return nil
 	}
 }
