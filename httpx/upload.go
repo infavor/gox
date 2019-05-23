@@ -240,14 +240,26 @@ func (handler *FileUploadHandler) readFileBody(fileName string, out io.WriteClos
 			i2 := bytes.Index(handler.separatorMergeBuffer, handler.separator)
 			if i2 != -1 {
 				if i2 < separatorLength {
+					_, err := out.Write(handler.formReader.buffer[0 : len1-i2])
+					if err != nil {
+						return err
+					}
 					handler.formReader.Unread(handler.formReader.buffer[len1-i2+2 : len1])
 					handler.formReader.Unread(handler.separatorTestBuffer[0:len2])
 				} else {
+					_, err := out.Write(handler.formReader.buffer[0:len1])
+					if err != nil {
+						return err
+					}
 					handler.formReader.Unread(handler.separatorTestBuffer[i2-separatorLength+2 : len2])
 				}
 				handler.OnEndFile(fileName, out)
 				break
 			} else {
+				_, err := out.Write(handler.formReader.buffer[0:len1])
+				if err != nil {
+					return err
+				}
 				handler.formReader.Unread(handler.separatorTestBuffer[0:len2])
 			}
 		}
