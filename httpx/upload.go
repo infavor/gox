@@ -94,7 +94,7 @@ type FileUploadHandler struct {
 }
 
 // beginUpload begin to read request entity and parse form field
-func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
+func (handler *FileUploadHandler) BeginUpload() error {
 	handler.formReader = &FileFormReader{
 		request:          handler.Request,
 		unReadableBuffer: new(bytes.Buffer),
@@ -103,10 +103,6 @@ func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
 		newLineBuffer:    new(bytes.Buffer),
 		buffer:           make([]byte, 1024*30),
 	}
-	var ret = &UploadResponse{
-		FormData: make(map[string][]string),
-	}
-
 	var fileIndex = 0
 
 	headerContentType := handler.Request.Header["Content-Type"]
@@ -124,17 +120,17 @@ func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
 		for {
 			line, err := handler.formReader.readNextLine()
 			if err != nil {
-				return nil, err
+				return err
 			}
 			// if it is paraSeparator, then start read new form text field or file field
 			if handler.paraBoundary == line {
 				contentDisposition, err := handler.formReader.readNextLine()
 				if err != nil {
-					return nil, err
+					return err
 				} else {
 					mat1, err := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
 					if err != nil {
-						return nil, err
+						return err
 					}
 					paramName := ""
 					paramValue := ""
@@ -144,12 +140,12 @@ func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
 
 					paramContentType, err := handler.formReader.readNextLine()
 					if err != nil {
-						return nil, err
+						return err
 					} else {
 						if paramContentType == "" { // read text parameter field
 							param, err := handler.formReader.readNextLine()
 							if err != nil {
-								return nil, err
+								return err
 							} else {
 								paramValue = param
 								handler.OnFormField(paramName, paramValue, PLAIN)
@@ -157,7 +153,7 @@ func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
 						} else { // parse content type
 							mat2, err := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
 							if err != nil {
-								return nil, err
+								return err
 							}
 							fileName := ""
 							if mat2 {
@@ -167,12 +163,12 @@ func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
 
 							_, err = handler.formReader.readNextLine() // read blank line
 							if err != nil {
-								return nil, err
+								return err
 							} else { // read file body
 								handler.OnFormField(paramName, fileName, FILE)
 								err := handler.readFileBody(handler.OnFileField(fileName))
 								if err != nil {
-									return nil, err
+									return err
 								}
 								fileIndex++
 							}
@@ -188,21 +184,8 @@ func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
 			}
 		}
 	}
-	// copy string list to string[]
-	for k, v := range handler.params {
-		if v != nil {
-			tmp := make([]string, v.Len())
-			index := 0
-			for ele := v.Front(); ele != nil; ele = ele.Next() {
-				tmp[index] = ele.Value.(string)
-				index++
-			}
-			ret.FormData[k] = tmp
-		}
-	}
 
-	ret.Status = "success"
-	return ret, nil
+	return nil
 }
 
 // readNextLine reads next form field meta string.
