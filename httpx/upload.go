@@ -114,7 +114,7 @@ func (handler *FileUploadHandler) BeginUpload() error {
 		handler.boundary = RegexContentTypePattern.ReplaceAllString(contentType, "${1}")
 		handler.paraBoundary = "--" + handler.boundary
 		handler.endParaBoundary = "--" + handler.boundary + "--"
-		handler.separator = []byte("\r\n" + handler.boundary)
+		handler.separator = []byte("\r\n" + handler.paraBoundary)
 		handler.separatorTestBuffer = make([]byte, len(handler.separator))
 		handler.separatorMergeBuffer = make([]byte, len(handler.separator)*2)
 		for {
