@@ -1,8 +1,8 @@
 package pool_test
 
 import (
-	"../pool"
 	"fmt"
+	"gox/pool"
 	"testing"
 )
 

@@ -1,8 +1,8 @@
 package convert_test
 
 import (
-	"../convert"
 	"fmt"
+	"gox/convert"
 	"os"
 	"testing"
 )
