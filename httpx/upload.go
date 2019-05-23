@@ -238,9 +238,7 @@ func (handler *FileUploadHandler) readFileBody(out io.WriteCloser) error {
 		// whether buff1 contains separator
 		pos := bytes.Index(handler.formReader.buffer, handler.separator)
 		if pos != -1 {
-			// out.Write(reader.buffer[0:pos])
-			// write bytes......
-			///-----------------
+			out.Write(handler.formReader.buffer[0:pos])
 			handler.formReader.Unread(handler.formReader.buffer[pos+2 : len1]) // skip "\r\n"
 			break
 		} else {
