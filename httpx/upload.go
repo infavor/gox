@@ -75,8 +75,8 @@ func (reader *FileFormReader) Read(buff []byte) (int, error) {
 }
 
 type FileUploadHandler struct {
-	writer               http.ResponseWriter
-	request              *http.Request
+	Writer               http.ResponseWriter
+	Request              *http.Request
 	params               map[string]*list.List
 	boundary             string
 	paraBoundary         string
@@ -96,7 +96,7 @@ type FileUploadHandler struct {
 // beginUpload begin to read request entity and parse form field
 func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
 	handler.formReader = &FileFormReader{
-		request:          handler.request,
+		request:          handler.Request,
 		unReadableBuffer: new(bytes.Buffer),
 		atomByte:         make([]byte, 1),
 		newLineBytesPair: make([]byte, 2),
@@ -109,7 +109,7 @@ func (handler *FileUploadHandler) beginUpload() (*UploadResponse, error) {
 
 	var fileIndex = 0
 
-	headerContentType := handler.request.Header["Content-Type"]
+	headerContentType := handler.Request.Header["Content-Type"]
 	contentType := ""
 	if headerContentType != nil && len(headerContentType) > 0 {
 		contentType = headerContentType[0]
