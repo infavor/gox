@@ -193,6 +193,7 @@ func (reader *FileFormReader) readNextLine() (string, error) {
 		reader.newLineBytesPair[0] = reader.newLineBytesPair[1]
 		reader.newLineBytesPair[1] = reader.atomByte[0]
 		reader.newLineBuffer.Write(reader.atomByte)
+		fmt.Println(string(reader.newLineBuffer.Bytes()))
 		if bytes.Equal(newLineMarker, reader.newLineBytesPair) {
 			return string(reader.newLineBuffer.Bytes()[0 : reader.newLineBuffer.Len()-2]), nil
 		}
