@@ -111,7 +111,7 @@ func (handler *FileUploadHandler) BeginUpload() error {
 		contentType = headerContentType[0]
 	}
 	if RegexContentTypePattern.Match([]byte(contentType)) {
-		handler.boundary = RegexContentDispositionPattern.ReplaceAllString(contentType, "${1}")
+		handler.boundary = RegexContentTypePattern.ReplaceAllString(contentType, "${1}")
 		handler.paraBoundary = "--" + handler.boundary
 		handler.endParaBoundary = "--" + handler.boundary + "--"
 		handler.separator = []byte("\r\n" + handler.boundary)
@@ -128,14 +128,11 @@ func (handler *FileUploadHandler) BeginUpload() error {
 				if err != nil {
 					return err
 				} else {
-					mat1, err := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
-					if err != nil {
-						return err
-					}
+					mat1 := RegexContentDispositionPattern.Match([]byte(contentDisposition))
 					paramName := ""
 					paramValue := ""
 					if mat1 {
-						paramName = regexp.MustCompile(ContentDispositionPattern).ReplaceAllString(contentDisposition, "${1}")
+						paramName = RegexContentDispositionPattern.ReplaceAllString(contentDisposition, "${1}")
 					}
 
 					paramContentType, err := handler.formReader.readNextLine()
@@ -151,16 +148,11 @@ func (handler *FileUploadHandler) BeginUpload() error {
 								handler.OnFormField(paramName, paramValue, PLAIN)
 							}
 						} else { // parse content type
-							mat2, err := regexp.Match(ContentDispositionPattern, []byte(contentDisposition))
-							if err != nil {
-								return err
-							}
+							mat2 := RegexContentDispositionPattern.Match([]byte(contentDisposition))
 							fileName := ""
 							if mat2 {
-								fileName = regexp.MustCompile(ContentDispositionPattern).ReplaceAllString(contentDisposition, "${3}")
+								fileName = RegexContentDispositionPattern.ReplaceAllString(contentDisposition, "${3}")
 							}
-							fmt.Println(fileName)
-
 							_, err = handler.formReader.readNextLine() // read blank line
 							if err != nil {
 								return err
