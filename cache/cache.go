@@ -90,6 +90,10 @@ func (bc *ByteCapsule) Bytes() []byte {
 func ApplyResource(p reflect.Type, fallback func() interface{}) interface{} {
 	var bc interface{}
 	cha := cacheResourceContainer[p]
+	if cha == nil {
+		cha = make(chan interface{}, cacheResourceSize)
+		cacheResourceContainer[p] = cha
+	}
 	select {
 	case bc = <-cha:
 		return bc
