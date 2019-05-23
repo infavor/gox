@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/hetianyi/gox/cache"
 	"io"
 	"net/http"
 	"reflect"
@@ -82,14 +83,20 @@ func (reader *FileFormReader) Read(buff []byte) (int, error) {
 
 // beginUpload begin to read request entity and parse form field
 func (handler *FileUploadHandler) Parse() error {
-	handler.formReader = &FileFormReader{
-		request:          handler.Request,
-		unReadableBuffer: new(bytes.Buffer),
-		atomByte:         make([]byte, 1),
-		newLineBytesPair: make([]byte, 2),
-		newLineBuffer:    new(bytes.Buffer),
-		buffer:           make([]byte, 1024*30),
-	}
+	defer func() {
+		cache.ReCacheResource(handler.formReader)
+		handler.formReader = nil
+	}()
+	handler.formReader = cache.ApplyResource(formReaderType, func() interface{} {
+		return &FileFormReader{
+			request:          handler.Request,
+			unReadableBuffer: new(bytes.Buffer),
+			atomByte:         make([]byte, 1),
+			newLineBytesPair: make([]byte, 2),
+			newLineBuffer:    new(bytes.Buffer),
+			buffer:           make([]byte, 1024*30),
+		}
+	}).(*FileFormReader)
 
 	var fileIndex = 0
 
