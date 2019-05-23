@@ -182,6 +182,7 @@ func (handler *FileUploadHandler) BeginUpload() error {
 
 // readNextLine reads next form field meta string.
 func (reader *FileFormReader) readNextLine() (string, error) {
+	reader.newLineBuffer.Reset()
 	for {
 		len, err := reader.Read(reader.atomByte)
 		if err != nil && err != io.EOF {
@@ -193,7 +194,6 @@ func (reader *FileFormReader) readNextLine() (string, error) {
 		reader.newLineBytesPair[0] = reader.newLineBytesPair[1]
 		reader.newLineBytesPair[1] = reader.atomByte[0]
 		reader.newLineBuffer.Write(reader.atomByte)
-		fmt.Println(string(reader.newLineBuffer.Bytes()))
 		if bytes.Equal(newLineMarker, reader.newLineBytesPair) {
 			return string(reader.newLineBuffer.Bytes()[0 : reader.newLineBuffer.Len()-2]), nil
 		}
