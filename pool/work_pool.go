@@ -7,8 +7,15 @@ package pool
 import (
 	"container/list"
 	"errors"
+	"github.com/hetianyi/gox"
+	"github.com/hetianyi/gox/logger"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
+
+func init() {
+	logger.Init(nil)
+}
 
 // pool is a task pool which can limit the number of concurrent task.
 type pool struct {
@@ -101,9 +108,10 @@ func (pool *pool) execute(task func()) {
 	defer func() {
 		pool.updateActiveTaskSize(-1)
 		pool.cha <- 1
-		if err := recover(); err != nil {
-			// error
-		}
 	}()
-	task()
+	gox.Try(func() {
+		task()
+	}, func(i interface{}) {
+		logrus.Error("error execute work:", i)
+	})
 }

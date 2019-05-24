@@ -7,12 +7,17 @@ package conn
 import (
 	"container/list"
 	"errors"
-	"fmt"
+	"github.com/hetianyi/gox/logger"
+	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"sync"
 	"time"
 )
+
+func init() {
+	logger.Init(nil)
+}
 
 // pool is a connection pool.
 type pool struct {
@@ -66,7 +71,7 @@ func (fac *ConnectionFactory) createConn() (*net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(time.Now().UTC(), " created new conn:", &conn)
+	logrus.Debug("create new connection:", &conn)
 	return &conn, nil
 }
 
@@ -131,7 +136,7 @@ func (p *pool) expireConnections() {
 			next = e.Next()
 			if p.registeredConnMap[c].Unix() <= now.Unix() {
 				p.connList.Remove(e)
-				fmt.Println(now.UTC(), " expire connection:", c)
+				logrus.Debug("expire connection:", &c)
 				p.ReturnBrokenConnection(c)
 			}
 		}

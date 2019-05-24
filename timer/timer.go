@@ -1,6 +1,15 @@
 package timer
 
-import "time"
+import (
+	"github.com/hetianyi/gox"
+	"github.com/hetianyi/gox/logger"
+	"github.com/sirupsen/logrus"
+	"time"
+)
+
+func init() {
+	logger.Init(nil)
+}
 
 // timer defines a timer.
 type timer struct {
@@ -40,14 +49,11 @@ func (timer *timer) tick(initialDelay int64, fixedDelay int64, fixedRate int64, 
 			if timer.close {
 				break
 			}
-			func() {
-				defer func() {
-					if err := recover(); err != nil {
-						// do nothing
-					}
-				}()
+			gox.Try(func() {
 				work()
-			}()
+			}, func(i interface{}) {
+				logrus.Error("error execute timer job:", i)
+			})
 			<-t.C
 		}
 	} else {
@@ -55,14 +61,11 @@ func (timer *timer) tick(initialDelay int64, fixedDelay int64, fixedRate int64, 
 			if timer.close {
 				break
 			}
-			func() {
-				defer func() {
-					if err := recover(); err != nil {
-						// do nothing
-					}
-				}()
+			gox.Try(func() {
 				work()
-			}()
+			}, func(i interface{}) {
+				logrus.Error("error execute timer job:", i)
+			})
 			time.Sleep(time.Millisecond * time.Duration(fixedDelay))
 		}
 	}

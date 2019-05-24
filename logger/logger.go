@@ -6,6 +6,7 @@ package logger
 import (
 	"bytes"
 	"fmt"
+	"github.com/hetianyi/gox"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -14,11 +15,11 @@ import (
 	"time"
 )
 
-func Init() {
+func Init(formatter *MyTextFormatter) {
 	// Log as JSON instead of the default ASCII formatter.
 	// log.SetFormatter(&log.JSONFormatter{})
 	// log.SetFormatter(&log.TextFormatter{})
-	log.SetFormatter(new(MyTextFormatter))
+	log.SetFormatter(gox.TValue(formatter == nil, new(MyTextFormatter), formatter).(*MyTextFormatter))
 
 	// Output to stdout instead of the default stderr
 	// Can be any io.Writer, see below for File example
