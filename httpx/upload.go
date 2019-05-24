@@ -84,6 +84,9 @@ func (reader *FileFormReader) Read(buff []byte) (int, error) {
 // beginUpload begin to read request entity and parse form field
 func (handler *FileUploadHandler) Parse() error {
 	defer func() {
+		handler.formReader.newLineBuffer.Reset()
+		handler.formReader.unReadableBuffer.Reset()
+		handler.formReader.request = nil
 		cache.ReCacheResource(handler.formReader)
 		handler.formReader = nil
 	}()
@@ -97,6 +100,7 @@ func (handler *FileUploadHandler) Parse() error {
 			buffer:           make([]byte, 1024*30),
 		}
 	}).(*FileFormReader)
+	handler.formReader.request = handler.Request
 
 	var fileIndex = 0
 
