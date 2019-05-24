@@ -2,14 +2,18 @@ package timer
 
 import "time"
 
+// timer defines a timer.
 type timer struct {
 	close bool
 }
 
+// Destroy destroys the timer.
 func (timer *timer) Destroy() {
 	timer.close = true
 }
 
+// Start starts a timer with parameters 'initialDelay', 'fixedDelay', 'fixedRate' and timer work,
+// It returns timer struct for controlling.
 func Start(initialDelay int64, fixedDelay int64, fixedRate int64, work func()) *timer {
 	t := &timer{
 		close: false,
