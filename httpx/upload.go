@@ -209,7 +209,10 @@ func (reader *FileFormReader) readNextLine() (string, error) {
 // readFileBody reads a file body part.
 func (handler *FileUploadHandler) readFileBody(fileName string, processor *FileTransactionProcessor) error {
 	if processor.Before != nil {
-		processor.Before()
+		err := processor.Before()
+		if err != nil {
+			return err
+		}
 	}
 	separatorLength := len(handler.separator)
 	for {
