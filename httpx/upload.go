@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/cache"
 	"io"
 	"net/http"
@@ -11,14 +12,9 @@ import (
 	"regexp"
 )
 
-type FormType = int
-
 const (
 	ContentTypePattern        = "^multipart/form-data; boundary=(.*)$"
 	ContentDispositionPattern = "^Content-Disposition: form-data; name=\"([^\"]*)\"(; filename=\"([^\"]*)\".*)?$"
-
-	PLAIN FormType = 1
-	FILE  FormType = 2
 )
 
 var (
@@ -27,6 +23,13 @@ var (
 	RegexContentDispositionPattern = regexp.MustCompile(ContentDispositionPattern)
 	formReaderType                 = reflect.TypeOf(&FileFormReader{})
 )
+
+type FileTransactionProcessor struct {
+	Before  func() error
+	Write   func(bs []byte) error
+	Success func() error
+	Error   func(err error)
+}
 
 type FileFormReader struct {
 	request          *http.Request
@@ -46,11 +49,9 @@ type FileUploadHandler struct {
 	separatorMergeBuffer []byte
 	formReader           *FileFormReader
 	// call when read a plain text field.
-	OnFormField func(name string, value string, formType FormType)
+	OnFormField func(name string, value string)
 	// call when about begin to read file body from form, need to provide an io.WriteCloser to write file bytes.
-	OnFileField func(name string) io.WriteCloser
-	// call when a file is end.
-	OnEndFile func(name string, out io.WriteCloser)
+	OnFileField func(name string) *FileTransactionProcessor
 }
 
 // Unread return extra read bytes for next read.
@@ -144,7 +145,7 @@ func (handler *FileUploadHandler) Parse() error {
 								return err
 							} else {
 								paramValue = param
-								handler.OnFormField(paramName, paramValue, PLAIN)
+								handler.OnFormField(paramName, paramValue)
 							}
 						} else { // parse content type
 							mat2 := RegexContentDispositionPattern.Match([]byte(contentDisposition))
@@ -156,8 +157,14 @@ func (handler *FileUploadHandler) Parse() error {
 							if err != nil {
 								return err
 							} else { // read file body
-								handler.OnFormField(paramName, fileName, FILE)
-								err := handler.readFileBody(fileName, handler.OnFileField(fileName))
+								processor := handler.OnFileField(fileName)
+								if processor == nil {
+									return errors.New("file processor cannot be nil")
+								}
+								err := handler.readFileBody(fileName, processor)
+								if err != nil {
+									handleError(processor, err)
+								}
 								if err != nil {
 									return err
 								}
@@ -200,7 +207,10 @@ func (reader *FileFormReader) readNextLine() (string, error) {
 }
 
 // readFileBody reads a file body part.
-func (handler *FileUploadHandler) readFileBody(fileName string, out io.WriteCloser) error {
+func (handler *FileUploadHandler) readFileBody(fileName string, processor *FileTransactionProcessor) error {
+	if processor.Before != nil {
+		processor.Before()
+	}
 	separatorLength := len(handler.separator)
 	for {
 		len1, err := handler.formReader.Read(handler.formReader.buffer)
@@ -213,16 +223,24 @@ func (handler *FileUploadHandler) readFileBody(fileName string, out io.WriteClos
 		// whether buff1 contains separator
 		pos := bytes.Index(handler.formReader.buffer, handler.separator)
 		if pos != -1 {
-			out.Write(handler.formReader.buffer[0:pos])
+			if processor.Write != nil {
+				err := processor.Write(handler.formReader.buffer[0:pos])
+				if err != nil {
+					return err
+				}
+			}
 			handler.formReader.Unread(handler.formReader.buffer[pos+2 : len1]) // skip "\r\n"
-			handler.OnEndFile(fileName, out)
+			if processor.Success != nil {
+				err := processor.Success()
+				if err != nil {
+					return err
+				}
+			}
 			break
 		} else {
 			len2, err := handler.formReader.Read(handler.separatorTestBuffer)
-			if err != nil {
-				if err != io.EOF {
-					return err
-				}
+			if err != nil && err != io.EOF {
+				return err
 			}
 			if len2 == 0 {
 				return errors.New("read file body failed[1]")
@@ -239,23 +257,37 @@ func (handler *FileUploadHandler) readFileBody(fileName string, out io.WriteClos
 			i2 := bytes.Index(handler.separatorMergeBuffer, handler.separator)
 			if i2 != -1 {
 				if i2 < separatorLength {
-					_, err := out.Write(handler.formReader.buffer[0 : len1-i2])
-					if err != nil {
-						return err
+					if processor.Write != nil {
+						err := processor.Write(handler.formReader.buffer[0 : len1-i2])
+						if err != nil {
+							return err
+						}
 					}
 					handler.formReader.Unread(handler.formReader.buffer[len1-i2+2 : len1])
 					handler.formReader.Unread(handler.separatorTestBuffer[0:len2])
 				} else {
-					_, err := out.Write(handler.formReader.buffer[0:len1])
-					if err != nil {
-						return err
+					if processor.Write != nil {
+						err := processor.Write(handler.formReader.buffer[0:len1])
+						if err != nil {
+							return err
+						}
 					}
 					handler.formReader.Unread(handler.separatorTestBuffer[i2-separatorLength+2 : len2])
 				}
-				handler.OnEndFile(fileName, out)
+				if processor.Success != nil {
+					err := processor.Success()
+					if err != nil {
+						return err
+					}
+				}
 				break
 			} else {
-				_, err := out.Write(handler.formReader.buffer[0:len1])
+				if processor.Write != nil {
+					err := processor.Write(handler.formReader.buffer[0:len1])
+					if err != nil {
+						return err
+					}
+				}
 				if err != nil {
 					return err
 				}
@@ -264,6 +296,14 @@ func (handler *FileUploadHandler) readFileBody(fileName string, out io.WriteClos
 		}
 	}
 	return nil
+}
+
+func handleError(processor *FileTransactionProcessor, err error) {
+	if processor.Error != nil {
+		gox.Try(func() {
+			processor.Error(err)
+		}, func(i interface{}) {})
+	}
 }
 
 // ByteCopy copies bytes
