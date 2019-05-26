@@ -129,52 +129,48 @@ func (handler *FileUploadHandler) Parse() error {
 				contentDisposition, err := handler.formReader.readNextLine()
 				if err != nil {
 					return err
-				} else {
-					mat1 := RegexContentDispositionPattern.Match([]byte(contentDisposition))
-					paramName := ""
-					paramValue := ""
-					if mat1 {
-						paramName = RegexContentDispositionPattern.ReplaceAllString(contentDisposition, "${1}")
-					}
+				}
+				mat1 := RegexContentDispositionPattern.Match([]byte(contentDisposition))
+				paramName := ""
+				paramValue := ""
+				if mat1 {
+					paramName = RegexContentDispositionPattern.ReplaceAllString(contentDisposition, "${1}")
+				}
 
-					paramContentType, err := handler.formReader.readNextLine()
+				paramContentType, err := handler.formReader.readNextLine()
+				if err != nil {
+					return err
+				}
+				if paramContentType == "" { // read text parameter field
+					param, err := handler.formReader.readNextLine()
 					if err != nil {
 						return err
-					} else {
-						if paramContentType == "" { // read text parameter field
-							param, err := handler.formReader.readNextLine()
-							if err != nil {
-								return err
-							} else {
-								paramValue = param
-								handler.OnFormField(paramName, paramValue)
-							}
-						} else { // parse content type
-							mat2 := RegexContentDispositionPattern.Match([]byte(contentDisposition))
-							fileName := ""
-							if mat2 {
-								fileName = RegexContentDispositionPattern.ReplaceAllString(contentDisposition, "${3}")
-							}
-							_, err = handler.formReader.readNextLine() // read blank line
-							if err != nil {
-								return err
-							} else { // read file body
-								processor := handler.OnFileField(fileName)
-								if processor == nil {
-									return errors.New("file processor cannot be nil")
-								}
-								err := handler.readFileBody(fileName, processor)
-								if err != nil {
-									handleError(processor, err)
-								}
-								if err != nil {
-									return err
-								}
-								fileIndex++
-							}
-						}
 					}
-
+					paramValue = param
+					handler.OnFormField(paramName, paramValue)
+				} else { // parse content type
+					mat2 := RegexContentDispositionPattern.Match([]byte(contentDisposition))
+					fileName := ""
+					if mat2 {
+						fileName = RegexContentDispositionPattern.ReplaceAllString(contentDisposition, "${3}")
+					}
+					_, err = handler.formReader.readNextLine() // read blank line
+					if err != nil {
+						return err
+					}
+					// read file body
+					processor := handler.OnFileField(fileName)
+					if processor == nil {
+						return errors.New("file processor cannot be nil")
+					}
+					err := handler.readFileBody(fileName, processor)
+					if err != nil {
+						handleError(processor, err)
+					}
+					if err != nil {
+						return err
+					}
+					fileIndex++
 				}
 			} else if handler.endParaBoundary == line {
 				// form stream hit end
