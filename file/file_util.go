@@ -8,6 +8,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -234,4 +235,9 @@ func FixPath(input string) string {
 		}
 	}
 	return replacement
+}
+
+// ListFiles reads the directory named by dirname and returns a list of directory entries sorted by filename.
+func ListFiles(path string) ([]os.FileInfo, error) {
+	return ioutil.ReadDir(path)
 }

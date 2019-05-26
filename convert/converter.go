@@ -5,6 +5,7 @@
 package convert
 
 import (
+	"encoding/base64"
 	"strconv"
 	"strings"
 )
@@ -115,4 +116,14 @@ func StrToFloat64(value string) (float64, error) {
 // StrToBool converts string to bool.
 func StrToBool(value string) (bool, error) {
 	return strconv.ParseBool(strings.ToLower(value))
+}
+
+// ToBase64 converts an input string to base64 string.
+func EncodeBase64(input string) string {
+	return base64.StdEncoding.EncodeToString([]byte(input))
+}
+
+// DecodeBase64 decode a base64 string.
+func DecodeBase64(input string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(input)
 }
