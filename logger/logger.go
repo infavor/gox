@@ -12,7 +12,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // Init initialize logrus logger.
@@ -42,7 +41,7 @@ func (f *MyTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	} else {
 		b = &bytes.Buffer{}
 	}
-	b.WriteString(GetLongLongDateString(entry.Time))
+	b.WriteString(gox.GetLongLongDateString(entry.Time))
 	b.WriteString(" | ")
 	b.WriteString(fmt.Sprintf("%-5s", strings.ToUpper(entry.Level.String())))
 	b.WriteString(" | ")
@@ -66,23 +65,4 @@ func format3(input int) string {
 		return "0" + strconv.Itoa(input)
 	}
 	return strconv.Itoa(input)
-}
-
-// GetLongLongDateString gets short date format like '2018-11-11 12:12:12,233'.
-func GetLongLongDateString(t time.Time) string {
-	var buff bytes.Buffer
-	buff.WriteString(strconv.Itoa(t.Year()))
-	buff.WriteString("-")
-	buff.WriteString(format2(int(t.Month())))
-	buff.WriteString("-")
-	buff.WriteString(format2(t.Day()))
-	buff.WriteString(" ")
-	buff.WriteString(format2(t.Hour()))
-	buff.WriteString(":")
-	buff.WriteString(format2(t.Minute()))
-	buff.WriteString(":")
-	buff.WriteString(format2(t.Second()))
-	buff.WriteString(",")
-	buff.WriteString(format3(t.Nanosecond() / 1e6))
-	return buff.String()
 }
