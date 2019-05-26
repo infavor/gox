@@ -23,18 +23,17 @@ func GetFile(path string) (*os.File, error) {
 // GetFileMd5 gets file's md5.
 func GetFileMd5(fi string) (string, error) {
 	md := md5.New()
-	f, e := GetFile(fi)
-	if e != nil {
-		return "", e
-	} else {
-		defer f.Close()
-		_, e1 := io.Copy(md, f)
-		if e1 != nil {
-			return "", e1
-		}
-		md5 := hex.EncodeToString(md.Sum(nil))
-		return md5, nil
+	f, err := GetFile(fi)
+	if err != nil {
+		return "", err
 	}
+	defer f.Close()
+	_, err = io.Copy(md, f)
+	if err != nil {
+		return "", err
+	}
+	md5 := hex.EncodeToString(md.Sum(nil))
+	return md5, nil
 }
 
 // CopyFile copies src file to dest file.
@@ -43,19 +42,17 @@ func CopyFile(src string, dest string) (bool, error) {
 	defer srcFile.Close()
 	if err != nil {
 		return false, err
-	} else {
-		destFile, err := os.OpenFile(dest, syscall.O_CREAT|os.O_WRONLY|syscall.O_TRUNC, 0660)
-		if err != nil {
-			return false, err
-		} else {
-			defer destFile.Close()
-			_, err = io.Copy(destFile, srcFile)
-			if err != nil {
-				return false, nil
-			}
-			return true, nil
-		}
 	}
+	destFile, err := os.OpenFile(dest, syscall.O_CREAT|os.O_WRONLY|syscall.O_TRUNC, 0660)
+	if err != nil {
+		return false, err
+	}
+	defer destFile.Close()
+	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		return false, nil
+	}
+	return true, nil
 }
 
 // CopyFileTo copies a file to target dir.
@@ -64,21 +61,19 @@ func CopyFileTo(src string, dir string) (bool, error) {
 	defer srcFile.Close()
 	if err != nil {
 		return false, err
-	} else {
-		fileInfo, _ := srcFile.Stat()
-		destFile, err := os.OpenFile(FixPath(dir)+string(os.PathSeparator)+fileInfo.Name(),
-			syscall.O_CREAT|os.O_WRONLY|syscall.O_TRUNC, 0660)
-		if err != nil {
-			return false, err
-		} else {
-			defer destFile.Close()
-			_, err = io.Copy(destFile, srcFile)
-			if err != nil {
-				return false, nil
-			}
-			return true, nil
-		}
 	}
+	fileInfo, _ := srcFile.Stat()
+	destFile, err := os.OpenFile(FixPath(dir)+string(os.PathSeparator)+fileInfo.Name(),
+		syscall.O_CREAT|os.O_WRONLY|syscall.O_TRUNC, 0660)
+	if err != nil {
+		return false, err
+	}
+	defer destFile.Close()
+	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		return false, nil
+	}
+	return true, nil
 }
 
 // Exists check whether the file exists.
@@ -138,9 +133,8 @@ func IsFile1(path string) bool {
 	fi, err := os.Stat(path)
 	if nil == err {
 		return !fi.IsDir()
-	} else {
-		return false
 	}
+	return false
 }
 
 // IsFile2 checks whether the file represents a file.
@@ -148,9 +142,8 @@ func IsFile2(file *os.File) bool {
 	fi, err := file.Stat()
 	if nil == err {
 		return !fi.IsDir()
-	} else {
-		return false
 	}
+	return false
 }
 
 // IsDir1 checks whether the path represents a file.
@@ -158,9 +151,8 @@ func IsDir1(path string) bool {
 	fi, err := os.Stat(path)
 	if nil == err {
 		return fi.IsDir()
-	} else {
-		return false
 	}
+	return false
 }
 
 // IsDir2 checks whether the path represents a file.
@@ -168,9 +160,8 @@ func IsDir2(file *os.File) bool {
 	fi, err := file.Stat()
 	if nil == err {
 		return fi.IsDir()
-	} else {
-		return false
 	}
+	return false
 }
 
 // MoveFile renames (moves) oldpath to newpath.

@@ -9,7 +9,7 @@ var (
 	cacheResourceSize      = 10
 )
 
-// SetCacheListSize sets max size of each cache list.
+// SetCacheBytesListSize sets max size of each cache list.
 func SetCacheBytesListSize(size int) {
 	if size < 0 {
 		return
@@ -17,7 +17,7 @@ func SetCacheBytesListSize(size int) {
 	cacheBytesSize = size
 }
 
-// SetCacheListSize sets max size of each cache list.
+// SetCacheResourceListSize sets max size of each cache list.
 func SetCacheResourceListSize(size int) {
 	if size < 0 {
 		return
@@ -105,7 +105,7 @@ func ApplyResource(p reflect.Type, fallback func() interface{}) interface{} {
 	}
 }
 
-// ReCache caches bytes ByteCapsule
+// ReCacheResource caches bytes ByteCapsule
 func ReCacheResource(res interface{}) {
 	if res == nil {
 		return

@@ -24,6 +24,7 @@ var (
 	formReaderType                 = reflect.TypeOf(&FileFormReader{})
 )
 
+// FileTransactionProcessor is a model for processing one single file of a form.
 type FileTransactionProcessor struct {
 	Before  func() error
 	Write   func(bs []byte) error
@@ -31,6 +32,7 @@ type FileTransactionProcessor struct {
 	Error   func(err error)
 }
 
+// FileFormReader processes io operation during file upload.
 type FileFormReader struct {
 	request          *http.Request
 	unReadableBuffer *bytes.Buffer
@@ -40,6 +42,7 @@ type FileFormReader struct {
 	newLineBuffer    *bytes.Buffer
 }
 
+// FileUploadHandler defines a handler for processing http file upload.
 type FileUploadHandler struct {
 	Request              *http.Request
 	paraBoundary         string
@@ -65,24 +68,23 @@ func (reader *FileFormReader) Read(buff []byte) (int, error) {
 	if reader.unReadableBuffer.Len() > 0 {
 		if len(buff) <= reader.unReadableBuffer.Len() {
 			return reader.unReadableBuffer.Read(buff)
-		} else {
-			offsetPos, err := reader.unReadableBuffer.Read(buff)
-			if err != nil {
-				return 0, err
-			}
-			// read directly from reader
-			len, err := reader.request.Body.Read(buff[offsetPos:])
-			if err != nil && err != io.EOF {
-				return 0, err
-			}
-			return offsetPos + len, err
 		}
+		offsetPos, err := reader.unReadableBuffer.Read(buff)
+		if err != nil {
+			return 0, err
+		}
+		// read directly from reader
+		len, err := reader.request.Body.Read(buff[offsetPos:])
+		if err != nil && err != io.EOF {
+			return 0, err
+		}
+		return offsetPos + len, err
 	}
 	// read directly from reader
 	return reader.request.Body.Read(buff)
 }
 
-// beginUpload begin to read request entity and parse form field
+// Parse begin to read request entity and parse form field
 func (handler *FileUploadHandler) Parse() error {
 	defer func() {
 		handler.formReader.newLineBuffer.Reset()

@@ -30,7 +30,7 @@ func SetDefaultMaxConnIdleTime(connMaxIdleTime time.Duration) {
 	defaultMaxConnIdleTime = connMaxIdleTime
 }
 
-// InitSettings initializes settings of a server.
+// InitServerSettings initializes settings of a server.
 // It is better way that initialize a server settings before getting connections from it's pool.
 func InitServerSettings(server *Server, maxConn int, connMaxIdleTime time.Duration) {
 	s := server.GetConnectionString()

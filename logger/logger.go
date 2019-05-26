@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+// Init initialize logrus logger.
 func Init(formatter *MyTextFormatter) {
 	// Log as JSON instead of the default ASCII formatter.
 	// log.SetFormatter(&log.JSONFormatter{})
@@ -29,9 +30,11 @@ func Init(formatter *MyTextFormatter) {
 	log.SetLevel(log.InfoLevel)
 }
 
+// default text formatter.
 type MyTextFormatter struct {
 }
 
+// Format formats logs.
 func (f *MyTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	var b *bytes.Buffer
 	if entry.Buffer != nil {

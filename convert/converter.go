@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// Int2Str converts int to string.
+// IntToStr converts int to string.
 func IntToStr(value int) string {
 	return strconv.Itoa(value)
 }
@@ -48,9 +48,8 @@ func Float64ToStr(value float64) string {
 func BoolToStr(value bool) string {
 	if value {
 		return "true"
-	} else {
-		return "false"
 	}
+	return "false"
 }
 
 // StrToInt converts string to int.

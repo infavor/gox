@@ -116,7 +116,6 @@ func (p *pool) ReturnBrokenConnection(conn *net.Conn) {
 	}()
 	if conn != nil {
 		(*conn).Close()
-		conn = nil
 	}
 }
 

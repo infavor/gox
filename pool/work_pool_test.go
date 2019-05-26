@@ -19,8 +19,6 @@ func Test1(t *testing.T) {
 			fmt.Println("Err:", err)
 		}
 	}
-	c := make(chan int)
-	<-c
 }
 
 func testTask(taskId int) {

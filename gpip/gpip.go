@@ -5,8 +5,8 @@
 package gpip
 
 import (
-	"encoding/binary"
 	"encoding/json"
+	"github.com/hetianyi/gox"
 	"github.com/json-iterator/go"
 	"io"
 	"net"
@@ -75,8 +75,8 @@ func (pip *Pip) Receive(
 	if _, err := io.ReadFull(pip.Conn, bodyLenBytes); err != nil {
 		return err
 	}
-	headerLen := ConvertBytes2Len(&headerLenBytes)
-	bodyLen := ConvertBytes2Len(&bodyLenBytes)
+	headerLen := gox.ConvertBytes2Length(&headerLenBytes)
+	bodyLen := gox.ConvertBytes2Length(&bodyLenBytes)
 	headerBs := make([]byte, headerLen)
 	if _, err := io.ReadFull(pip.Conn, headerBs); err != nil {
 		return err
@@ -124,14 +124,14 @@ func Serialize(obj interface{}) ([]byte, error) {
 	return jsoniter.Marshal(obj)
 }
 
-// Deserialize deserialize an byte array to an interface by type.
+// DeserializeFromType deserialize an byte array to an interface by type.
 func DeserializeFromType(data []byte, p reflect.Type) (interface{}, error) {
 	o := reflect.New(p).Interface()
 	err := json.Unmarshal(data, &o)
 	return o, err
 }
 
-// Deserialize deserialize an byte array to an interface by type.
+// DeserializeFromObject deserialize an byte array to an interface by type.
 func DeserializeFromObject(data []byte, obj interface{}) error {
 	return json.Unmarshal(data, &obj)
 }
@@ -144,18 +144,8 @@ func autoFillFrame(frame *pipFrame) error {
 	}
 	frame.headerBody = headerBs
 	frameHead := make([]byte, frameHeadSize*2)
-	ConvertLen2Bytes(int64(len(headerBs)), frameHead[0:frameHeadSize])
-	ConvertLen2Bytes(frame.bodyLength, frameHead[frameHeadSize:])
+	gox.ConvertLength2Bytes(int64(len(headerBs)), &frameHead[0:frameHeadSize])
+	gox.ConvertLength2Bytes(frame.bodyLength, &frameHead[frameHeadSize:])
 	frame.frameHead = frameHead
 	return nil
-}
-
-// ConvertLen2Bytes converts an int64 value to an 8 bytes array.
-func ConvertLen2Bytes(len int64, buffer []byte) {
-	binary.BigEndian.PutUint64(buffer, uint64(len))
-}
-
-// ConvertBytes2Len converts an 8 bytes array to an int64 value.
-func ConvertBytes2Len(ret *[]byte) int64 {
-	return int64(binary.BigEndian.Uint64(*ret))
 }
