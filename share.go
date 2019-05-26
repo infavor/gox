@@ -80,14 +80,14 @@ func WalkList(ls *list.List, walker func(item interface{}) bool) {
 }
 
 // ConvertLength2Bytes converts an int64 value to a byte array.
-func ConvertLength2Bytes(len int64, buffer *[]byte) *[]byte {
-	binary.BigEndian.PutUint64(*buffer, uint64(len))
+func ConvertLength2Bytes(len int64, buffer []byte) []byte {
+	binary.BigEndian.PutUint64(buffer, uint64(len))
 	return buffer
 }
 
 // ConvertBytes2Length converts a byte array to an int64 value.
-func ConvertBytes2Length(ret *[]byte) int64 {
-	return int64(binary.BigEndian.Uint64(*ret))
+func ConvertBytes2Length(ret []byte) int64 {
+	return int64(binary.BigEndian.Uint64(ret))
 }
 
 // Md5Sum calculates md5 value of some strings.
