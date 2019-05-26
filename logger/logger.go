@@ -10,7 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -48,21 +47,4 @@ func (f *MyTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	b.WriteString(entry.Message)
 	b.WriteString("\n")
 	return b.Bytes(), nil
-}
-
-func format2(input int) string {
-	if input < 10 {
-		return "0" + strconv.Itoa(input)
-	}
-	return strconv.Itoa(input)
-}
-
-func format3(input int) string {
-	if input < 10 {
-		return "00" + strconv.Itoa(input)
-	}
-	if input < 100 {
-		return "0" + strconv.Itoa(input)
-	}
-	return strconv.Itoa(input)
 }
