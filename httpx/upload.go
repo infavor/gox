@@ -52,9 +52,9 @@ type FileUploadHandler struct {
 	separatorMergeBuffer []byte
 	formReader           *FileFormReader
 	// call when read a plain text field.
-	OnFormField func(name string, value string)
+	OnFormField func(paraName, paraValue string)
 	// call when about begin to read file body from form, need to provide an io.WriteCloser to write file bytes.
-	OnFileField func(name string) *FileTransactionProcessor
+	OnFileField func(paraName, fileName string) *FileTransactionProcessor
 }
 
 // Unread return extra read bytes for next read.
@@ -159,7 +159,7 @@ func (handler *FileUploadHandler) Parse() error {
 						return err
 					}
 					// read file body
-					processor := handler.OnFileField(fileName)
+					processor := handler.OnFileField(paramName, fileName)
 					if processor == nil {
 						return errors.New("file processor cannot be nil")
 					}
