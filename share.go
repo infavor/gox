@@ -6,20 +6,11 @@ package gox
 import (
 	"container/list"
 	"crypto/md5"
-	"encoding/binary"
 	"encoding/hex"
 	"io"
 	"strconv"
 	"strings"
 )
-
-// ConvertBoolFromInt converts int to bool.
-func ConvertBoolFromInt(input int) bool {
-	if input <= 0 {
-		return false
-	}
-	return true
-}
 
 // List2Array converts list to array.
 func List2Array(ls *list.List) []interface{} {
@@ -77,17 +68,6 @@ func WalkList(ls *list.List, walker func(item interface{}) bool) {
 			break
 		}
 	}
-}
-
-// ConvertLength2Bytes converts an int64 value to a byte array.
-func ConvertLength2Bytes(len int64, buffer []byte) []byte {
-	binary.BigEndian.PutUint64(buffer, uint64(len))
-	return buffer
-}
-
-// ConvertBytes2Length converts a byte array to an int64 value.
-func ConvertBytes2Length(ret []byte) int64 {
-	return int64(binary.BigEndian.Uint64(ret))
 }
 
 // Md5Sum calculates md5 value of some strings.

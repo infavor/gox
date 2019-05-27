@@ -6,7 +6,7 @@ package gpip
 
 import (
 	"encoding/json"
-	"github.com/hetianyi/gox"
+	"github.com/hetianyi/gox/convert"
 	"github.com/json-iterator/go"
 	"io"
 	"net"
@@ -75,8 +75,8 @@ func (pip *Pip) Receive(
 	if _, err := io.ReadFull(pip.Conn, bodyLenBytes); err != nil {
 		return err
 	}
-	headerLen := gox.ConvertBytes2Length(headerLenBytes)
-	bodyLen := gox.ConvertBytes2Length(bodyLenBytes)
+	headerLen := convert.Bytes2Length(headerLenBytes)
+	bodyLen := convert.Bytes2Length(bodyLenBytes)
 	headerBs := make([]byte, headerLen)
 	if _, err := io.ReadFull(pip.Conn, headerBs); err != nil {
 		return err
@@ -144,8 +144,8 @@ func autoFillFrame(frame *pipFrame) error {
 	}
 	frame.headerBody = headerBs
 	frameHead := make([]byte, frameHeadSize*2)
-	gox.ConvertLength2Bytes(int64(len(headerBs)), frameHead[0:frameHeadSize])
-	gox.ConvertLength2Bytes(frame.bodyLength, frameHead[frameHeadSize:])
+	convert.Length2Bytes(int64(len(headerBs)), frameHead[0:frameHeadSize])
+	convert.Length2Bytes(frame.bodyLength, frameHead[frameHeadSize:])
 	frame.frameHead = frameHead
 	return nil
 }

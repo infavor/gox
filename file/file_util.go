@@ -196,6 +196,11 @@ func IsAbsPath(path string) bool {
 	return filepath.IsAbs(path)
 }
 
+// AbsPath return the absolute path of a relative path.
+func AbsPath(relPath string) (string, error) {
+	return filepath.Abs(relPath)
+}
+
 // GetFileExt returns the file name extension used by path.
 // The extension is the suffix beginning at the final dot in the final slash-separated element of path;
 // it is empty if there is no dot.

@@ -6,6 +6,7 @@ package convert
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"strconv"
 	"strings"
 )
@@ -126,4 +127,15 @@ func EncodeBase64(input string) string {
 // DecodeBase64 decode a base64 string.
 func DecodeBase64(input string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(input)
+}
+
+// Length2Bytes converts an int64 value to a byte array.
+func Length2Bytes(len int64, buffer []byte) []byte {
+	binary.BigEndian.PutUint64(buffer, uint64(len))
+	return buffer
+}
+
+// Bytes2Length converts a byte array to an int64 value.
+func Bytes2Length(ret []byte) int64 {
+	return int64(binary.BigEndian.Uint64(ret))
 }
