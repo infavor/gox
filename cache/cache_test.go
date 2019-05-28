@@ -1,7 +1,6 @@
 package cache_test
 
 import (
-	"fmt"
 	"github.com/hetianyi/gox/cache"
 	"testing"
 	"time"
@@ -10,14 +9,8 @@ import (
 func TestAll(t *testing.T) {
 	time.Sleep(time.Second * 1)
 
-	bc := cache.ApplyBytes(102*1, false)
-	bc.Bytes()[2] = 11
-	cache.ReCacheBytes(bc)
-	for i := 0; i < 10; i++ {
-		fmt.Println("apply...")
-		bc := cache.ApplyBytes(102*1, false)
-		fmt.Println(bc.Bytes())
-		fmt.Println()
+	for i := 0; i < 10000; i++ {
+		bc := cache.ApplyBytes(1024*10240, false)
 		cache.ReCacheBytes(bc)
 	}
 

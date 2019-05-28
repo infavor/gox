@@ -6,3 +6,5 @@
 - consul
 - feign-like
 -- uuid √
+
+- test package cache pointer/none-pointer

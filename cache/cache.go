@@ -3,7 +3,7 @@ package cache
 import "reflect"
 
 var (
-	cacheBytesContainer    = make(map[int]chan *ByteCapsule)
+	cacheBytesContainer    = make(map[int]chan ByteCapsule)
 	cacheResourceContainer = make(map[reflect.Type]chan interface{})
 	cacheBytesSize         = 10
 	cacheResourceSize      = 10
@@ -38,25 +38,25 @@ func makeBytes(size int) []byte {
 
 // ApplyBytes applies specified size of bytes array.
 // dynamic bytes apply will not be cached
-func ApplyBytes(size int, dynamic bool) *ByteCapsule {
+func ApplyBytes(size int, dynamic bool) ByteCapsule {
 	if dynamic || cacheBytesSize <= 0 {
-		return &ByteCapsule{
+		return ByteCapsule{
 			dynamic: true,
 			size:    size,
 			bytes:   makeBytes(size),
 		}
 	}
-	var bc *ByteCapsule
+	var bc ByteCapsule
 	cha := cacheBytesContainer[size]
 	if cha == nil {
-		cha = make(chan *ByteCapsule, cacheBytesSize)
+		cha = make(chan ByteCapsule, cacheBytesSize)
 		cacheBytesContainer[size] = cha
 	}
 	select {
 	case bc = <-cha:
 		return bc
 	default:
-		return &ByteCapsule{
+		return ByteCapsule{
 			dynamic: dynamic,
 			size:    size,
 			bytes:   makeBytes(size),
@@ -65,8 +65,8 @@ func ApplyBytes(size int, dynamic bool) *ByteCapsule {
 }
 
 // ReCacheBytes caches bytes ByteCapsule
-func ReCacheBytes(bc *ByteCapsule) {
-	if bc == nil || bc.dynamic {
+func ReCacheBytes(bc ByteCapsule) {
+	if bc.dynamic {
 		return
 	}
 	cha := cacheBytesContainer[bc.size]
@@ -77,7 +77,6 @@ func ReCacheBytes(bc *ByteCapsule) {
 	case cha <- bc:
 	default:
 		bc.bytes = nil
-		bc = nil
 	}
 }
 
