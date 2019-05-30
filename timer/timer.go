@@ -2,29 +2,25 @@ package timer
 
 import (
 	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/logger"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
-func init() {
-	logger.Init(nil)
-}
-
 // timer defines a timer.
-type timer struct {
+type Timer struct {
 	close bool
 }
 
 // Destroy destroys the timer.
-func (timer *timer) Destroy() {
-	timer.close = true
+func (t *Timer) Destroy() {
+	t.close = true
 }
 
 // Start starts a timer with parameters 'initialDelay', 'fixedDelay', 'fixedRate' and timer work,
 // It returns timer struct for controlling.
-func Start(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.Duration, work func()) *timer {
-	t := &timer{
+func Start(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.Duration, work func(t *Timer)) *Timer {
+	log.Debug("create timer")
+	t := &Timer{
 		close: false,
 	}
 	go t.tick(initialDelay, fixedDelay, fixedRate, work)
@@ -38,33 +34,38 @@ func Start(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.
 // fixedRate: a fixed period in milliseconds between calls.
 //
 // Note that fixedDelay is superior than fixedRate.
-func (timer *timer) tick(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.Duration, work func()) {
+func (t *Timer) tick(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.Duration, work func(t *Timer)) {
+	log.Debug("start timer")
+	defer func() {
+		log.Debug("stop timer")
+	}()
 	time.Sleep(initialDelay)
-	if timer.close {
+	if t.close {
 		return
 	}
 	if fixedDelay <= 0 {
-		t := time.NewTicker(fixedRate)
+		tim := time.NewTicker(fixedRate)
 		for {
-			if timer.close {
+			if t.close {
+				tim.Stop()
 				break
 			}
 			gox.Try(func() {
-				work()
+				work(t)
 			}, func(i interface{}) {
-				logrus.Error("error execute timer job:", i)
+				log.Error("error execute timer job:", i)
 			})
-			<-t.C
+			<-tim.C
 		}
 	} else {
 		for {
-			if timer.close {
+			if t.close {
 				break
 			}
 			gox.Try(func() {
-				work()
+				work(t)
 			}, func(i interface{}) {
-				logrus.Error("error execute timer job:", i)
+				log.Error("error execute timer job:", i)
 			})
 			time.Sleep(fixedDelay)
 		}

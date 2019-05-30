@@ -1,6 +1,7 @@
 package consulx
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/consul/api"
 	"github.com/hetianyi/gox"
@@ -23,6 +24,7 @@ type ConsulClient struct {
 	check                     *api.AgentServiceCheck
 	// check service health
 	ServiceCheck func() error
+	renewLock    chan byte
 }
 
 // checkServers checks all configured servers's status.
@@ -51,7 +53,6 @@ func (client *ConsulClient) Run() {
 	failCount := client.checkServers()
 	if failCount == len(client.Servers) {
 		log.Error("all consul server is unavailable!")
-		return
 	}
 	client.switchRegisterServer(true)
 
@@ -66,9 +67,13 @@ func (client *ConsulClient) Run() {
 		client.Service.Check = client.check
 	}
 
-	timer.Start(0, client.TTL/2, 0, func() {
-		client.registerService(0)
-	})
+	client.renewLock = make(chan byte)
+	go func() {
+		for {
+			client.renew()
+		}
+	}()
+	client.registerService()
 }
 
 // switchRegisterServer switches consul server if current consul is not available.
@@ -91,26 +96,45 @@ func (client *ConsulClient) switchRegisterServer(first bool) {
 }
 
 // refresh keeps register status for services.
-func (client *ConsulClient) registerService(retry int) {
-	log.Debug("refresh services...")
-	for client.currentApiClient == nil {
-		client.switchRegisterServer(false)
-	}
-	if err := client.currentApiClient.Agent().ServiceRegister(client.Service); err != nil {
-		log.Error("error register service[ID:", client.Service.ID, ", Name:", client.Service.Name, "]: ", err)
-		time.Sleep(time.Second * 5)
-		retry++
-		if retry >= 3 {
-			log.Error("register failed finally, retry next round")
-			client.currentApiClient = nil
-			return
+func (client *ConsulClient) registerService() {
+	retry := 0
+	for {
+		log.Debug("register service...")
+		for client.currentApiClient == nil {
+			client.switchRegisterServer(false)
 		}
-		client.registerService(retry)
+		err := client.currentApiClient.Agent().ServiceRegister(client.Service)
+		if err != nil {
+			log.Error("error register service[ID:", client.Service.ID, ", Name:", client.Service.Name, "]: ", err)
+			time.Sleep(time.Second * 15)
+			retry++
+			if retry%3 == 0 {
+				client.currentApiClient = nil
+			}
+			continue
+		}
+		log.Info("register service success: ", client.Service.Name)
+		break
 	}
-	log.Debug("refresh service[ID:", client.Service.ID, ", Name:", client.Service.Name, "] success")
+	client.renewLock <- 0
 	if err := client.loadServices(); err != nil {
 		log.Error("error get services info: ", err)
 	}
+}
+
+func (client *ConsulClient) renew() {
+	<-client.renewLock
+	timer.Start(0, client.TTL/2, 0, func(t *timer.Timer) {
+		log.Debug("try to renew service: ", client.Service.Name)
+		err := client.currentApiClient.Agent().PassTTL("service:"+gox.TValue(client.Service.ID == "", client.Service.Name, client.Service.ID).(string), "")
+		if err != nil {
+			log.Error("error renew service: ", client.Service.Name)
+			t.Destroy()
+			client.registerService()
+			return
+		}
+		log.Debug("renew service[ID:", client.Service.ID, ", Name:", client.Service.Name, "] success")
+	})
 }
 
 func (client *ConsulClient) loadServices() error {
@@ -118,7 +142,8 @@ func (client *ConsulClient) loadServices() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(ss)
+	bs, _ := json.MarshalIndent(ss, "", " ")
+	fmt.Println(string(bs))
 	return nil
 }
 

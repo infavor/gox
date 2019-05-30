@@ -8,14 +8,9 @@ import (
 	"container/list"
 	"errors"
 	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/logger"
 	"github.com/sirupsen/logrus"
 	"sync"
 )
-
-func init() {
-	logger.Init(nil)
-}
 
 // pool is a task pool which can limit the number of concurrent task.
 type pool struct {

@@ -7,17 +7,12 @@ package conn
 import (
 	"container/list"
 	"errors"
-	"github.com/hetianyi/gox/logger"
 	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"sync"
 	"time"
 )
-
-func init() {
-	logger.Init(nil)
-}
 
 // pool is a connection pool.
 type pool struct {
