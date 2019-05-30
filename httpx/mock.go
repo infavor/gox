@@ -178,27 +178,29 @@ func (m *mock) Error(callback func(status int, response []byte)) *mock {
 
 // Do is the end of the mock chain,
 // which will send the request and return the result.
-func (m *mock) Do() (interface{}, error) {
+func (m *mock) Do() (interface{}, int, error) {
 	paramsBytes := encodeParameters(m.parameterMap)
 	req, err := http.NewRequest(m.method, strings.Join([]string{m.url + "?" + string(paramsBytes)}, ""), bytes.NewReader(m.body))
 	if err != nil {
-		return m.responseContainer, err
+		return m.responseContainer, 0, err
 	}
 	for k, v := range m.headers {
 		req.Header.Add(k, v)
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return m.responseContainer, err
+		return m.responseContainer, 0, err
 	}
 
 	if !m.isSuccess(resp.StatusCode) {
 		bs, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return m.responseContainer, err
+			return m.responseContainer, resp.StatusCode, err
 		}
-		m.callback(resp.StatusCode, bs)
-		return m.responseContainer, nil
+		if m.callback != nil {
+			m.callback(resp.StatusCode, bs)
+		}
+		return m.responseContainer, resp.StatusCode, nil
 	}
 	decodeUseGzip := false
 	if resp.Header != nil {
@@ -218,21 +220,22 @@ func (m *mock) Do() (interface{}, error) {
 	if decodeUseGzip {
 		reader, err := gzip.NewReader(resp.Body)
 		if err != nil {
-			return m.responseContainer, err
+			return m.responseContainer, resp.StatusCode, err
 		}
 		bs, err := ioutil.ReadAll(reader)
 		if err != nil {
-			return m.responseContainer, err
+			return m.responseContainer, resp.StatusCode, err
 		}
 		body = bs
 	} else {
 		bs, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return m.responseContainer, err
+			return m.responseContainer, resp.StatusCode, err
 		}
 		body = bs
 	}
-	return convertResponse(checkResponseType(m.responseContainer), string(body), m.responseContainer)
+	ret, err := convertResponse(checkResponseType(m.responseContainer), string(body), m.responseContainer)
+	return ret, resp.StatusCode, err
 }
 
 // Get sets http method to GET.

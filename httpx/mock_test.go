@@ -18,7 +18,7 @@ type Response struct {
 }
 
 func TestMockGet1(t *testing.T) {
-	result, err := httpx.Mock().URL("https://hub.docker.com/v2/user/").Get().Success(&Response{}, 200, 401).Error(func(status int, response []byte) {
+	result, _, err := httpx.Mock().URL("https://hub.docker.com/v2/user/").Get().Success(&Response{}, 200, 401).Error(func(status int, response []byte) {
 		logrus.Error("status ", status, ", response: ", string(response))
 	}).Do()
 	if err != nil {
@@ -29,7 +29,7 @@ func TestMockGet1(t *testing.T) {
 }
 
 func TestMockGet2(t *testing.T) {
-	result, err := httpx.Mock().URL("https://hub.docker.com/v2/user/").Get().Success("", 200, 401).Error(func(status int, response []byte) {
+	result, _, err := httpx.Mock().URL("https://hub.docker.com/v2/user/").Get().Success("", 200, 401).Error(func(status int, response []byte) {
 		logrus.Error("status ", status, ", response: ", string(response))
 	}).Do()
 	if err != nil {
@@ -49,7 +49,7 @@ type Response1 struct {
 }
 
 func TestMockGet3(t *testing.T) {
-	result, err := httpx.Mock().URL("https://hub.docker.com/api/content/v1/platforms").Get().Success(&Response1{}).Error(func(status int, response []byte) {
+	result, _, err := httpx.Mock().URL("https://hub.docker.com/api/content/v1/platforms").Get().Success(&Response1{}).Error(func(status int, response []byte) {
 		logrus.Error("status ", status, ", response: ", string(response))
 	}).Do()
 	if err != nil {
@@ -61,7 +61,7 @@ func TestMockGet3(t *testing.T) {
 }
 
 func TestMockGet4(t *testing.T) {
-	result, err := httpx.Mock().URL("https://hub.docker.com/v2/repositories/library/redis/tags/").
+	result, _, err := httpx.Mock().URL("https://hub.docker.com/v2/repositories/library/redis/tags/").
 		Parameter("page_size", "25").
 		Parameter("page", "1").
 		Get().Success(new(map[string]interface{})).Error(func(status int, response []byte) {
@@ -76,7 +76,7 @@ func TestMockGet4(t *testing.T) {
 }
 
 func TestMockGet5(t *testing.T) {
-	result, err := httpx.Mock().URL("https://hub.docker.com/api/content/v1/products/images/redis").
+	result, _, err := httpx.Mock().URL("https://hub.docker.com/api/content/v1/products/images/redis").
 		Get().Success("").Error(func(status int, response []byte) {
 		logrus.Error("status ", status, ", response: ", string(response))
 	}).Do()
@@ -89,7 +89,7 @@ func TestMockGet5(t *testing.T) {
 
 func TestMockPost1(t *testing.T) {
 	logrus.Info("start ", time.Now().UTC())
-	result, err := httpx.Mock().URL("http://cdn.yifuls.com/api/cdn/detail").
+	result, _, err := httpx.Mock().URL("http://cdn.yifuls.com/api/cdn/detail").
 		Post().
 		Body(map[string][]string{"id": {"10004"}}).
 		Success(new(map[string]interface{})).Error(func(status int, response []byte) {
