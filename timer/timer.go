@@ -23,7 +23,7 @@ func (timer *timer) Destroy() {
 
 // Start starts a timer with parameters 'initialDelay', 'fixedDelay', 'fixedRate' and timer work,
 // It returns timer struct for controlling.
-func Start(initialDelay int64, fixedDelay int64, fixedRate int64, work func()) *timer {
+func Start(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.Duration, work func()) *timer {
 	t := &timer{
 		close: false,
 	}
@@ -38,13 +38,13 @@ func Start(initialDelay int64, fixedDelay int64, fixedRate int64, work func()) *
 // fixedRate: a fixed period in milliseconds between calls.
 //
 // Note that fixedDelay is superior than fixedRate.
-func (timer *timer) tick(initialDelay int64, fixedDelay int64, fixedRate int64, work func()) {
-	time.Sleep(time.Millisecond * time.Duration(initialDelay))
+func (timer *timer) tick(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.Duration, work func()) {
+	time.Sleep(initialDelay)
 	if timer.close {
 		return
 	}
 	if fixedDelay <= 0 {
-		t := time.NewTicker(time.Millisecond * time.Duration(fixedRate))
+		t := time.NewTicker(fixedRate)
 		for {
 			if timer.close {
 				break
@@ -66,7 +66,7 @@ func (timer *timer) tick(initialDelay int64, fixedDelay int64, fixedRate int64, 
 			}, func(i interface{}) {
 				logrus.Error("error execute timer job:", i)
 			})
-			time.Sleep(time.Millisecond * time.Duration(fixedDelay))
+			time.Sleep(fixedDelay)
 		}
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/convert"
 	json "github.com/json-iterator/go"
 	"io/ioutil"
@@ -179,8 +180,8 @@ func (m *mock) Error(callback func(status int, response []byte)) *mock {
 // Do is the end of the mock chain,
 // which will send the request and return the result.
 func (m *mock) Do() (interface{}, int, error) {
-	paramsBytes := encodeParameters(m.parameterMap)
-	req, err := http.NewRequest(m.method, strings.Join([]string{m.url + "?" + string(paramsBytes)}, ""), bytes.NewReader(m.body))
+	paramsStr := string(encodeParameters(m.parameterMap))
+	req, err := http.NewRequest(m.method, gox.TValue(paramsStr == "", m.url, m.url+"?"+paramsStr).(string), bytes.NewReader(m.body))
 	if err != nil {
 		return m.responseContainer, 0, err
 	}

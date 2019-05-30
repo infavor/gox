@@ -13,8 +13,14 @@ import (
 	"strings"
 )
 
+var initialized = false
+
 // Init initialize logrus logger.
 func Init(formatter *DefaultTextFormatter) {
+	if IsInitialized() {
+		log.Warn("logger has already initialized")
+	}
+	initialized = true
 	// Log as JSON instead of the default ASCII formatter.
 	// log.SetFormatter(&log.JSONFormatter{})
 	// log.SetFormatter(&log.TextFormatter{})
@@ -26,6 +32,10 @@ func Init(formatter *DefaultTextFormatter) {
 
 	// Only log the warning severity or above.
 	log.SetLevel(log.InfoLevel)
+}
+
+func IsInitialized() bool {
+	return initialized
 }
 
 // default text formatter.
