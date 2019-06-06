@@ -14,17 +14,15 @@ import (
 
 // ConsulClient is a tool for operating with consul server.
 type ConsulClient struct {
-	// Servers is an array of server:port group
-	Servers                   []string
+	Servers                   []string // Servers is an array of server:port group
 	TTL                       time.Duration
 	DeregisterCriticalService bool
 	Service                   *api.AgentServiceRegistration
 	currentServerIndex        int
 	currentApiClient          *api.Client
 	check                     *api.AgentServiceCheck
-	// check service health
-	ServiceCheck func() error
-	renewLock    chan byte
+	ServiceCheck              func() error // check service health
+	renewLock                 chan byte
 }
 
 // checkServers checks all configured servers's status.

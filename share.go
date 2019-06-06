@@ -8,9 +8,15 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"io"
+	"net"
 	"strconv"
 	"strings"
 )
+
+type IP struct {
+	Address string
+	Name    string
+}
 
 // List2Array converts list to array.
 func List2Array(ls *list.List) []interface{} {
@@ -100,4 +106,74 @@ func LimitRange(value interface{}, defaultValue interface{}, rangeValues ...inte
 		return value
 	}
 	return defaultValue
+}
+
+// GetPreferredIPAddress get self ip address by preferred interface
+func GetMyAddress(preferredNetworks ...string) string {
+	addresses, _ := net.Interfaces()
+	var ret list.List
+	for i := range addresses {
+		info := scan(addresses[i])
+		if info == nil {
+			continue
+		}
+		ret.PushBack(info)
+	}
+	if ret.Len() == 0 {
+		return "127.0.0.1"
+	}
+	selected := ""
+	for _, p := range preferredNetworks {
+		WalkList(&ret, func(item interface{}) bool {
+			if p == item.(*IP).Address {
+				selected = p
+				return true
+			}
+			if strings.HasPrefix(item.(*IP).Address, p) || item.(*IP).Name == p {
+				if selected == "" {
+					selected = item.(*IP).Address
+				}
+			}
+			return false
+		})
+	}
+	return TValue(selected == "", ret.Front().Value.(*IP).Address, selected).(string)
+}
+
+func scan(itf net.Interface) *IP {
+	var (
+		addr      *net.IPNet
+		addresses []net.Addr
+		err       error
+	)
+	if addresses, err = itf.Addrs(); err != nil {
+		return nil
+	}
+	if !strings.Contains(itf.Flags.String(), "up") {
+		return nil
+	}
+	for _, a := range addresses {
+		if ipNet, ok := a.(*net.IPNet); ok {
+			if ip4 := ipNet.IP.To4(); ip4 != nil {
+				addr = &net.IPNet{
+					IP:   ip4,
+					Mask: ipNet.Mask[len(ipNet.Mask)-4:],
+				}
+				break
+			}
+		}
+	}
+	if addr == nil {
+		return nil
+	}
+	if addr.IP[0] == 127 {
+		return nil
+	}
+	if addr.Mask[0] != 0xff || addr.Mask[1] != 0xff {
+		return nil
+	}
+	return &IP{
+		Address: addr.IP.String(),
+		Name:    itf.Name,
+	}
 }
