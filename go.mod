@@ -3,6 +3,7 @@ module github.com/hetianyi/gox
 go 1.12
 
 require (
+	github.com/disintegration/imaging v1.6.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/consul/api v1.1.0
 	github.com/json-iterator/go v1.1.6
