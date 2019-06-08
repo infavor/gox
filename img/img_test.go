@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/disintegration/imaging"
+	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/file"
 	"image"
 	"image/color"
@@ -283,7 +284,7 @@ func TestPaste1(t *testing.T) {
 	x := src1.Bounds().Size().X - src2.Bounds().Size().X - 20
 	y := src1.Bounds().Size().Y - src2.Bounds().Size().Y - 20
 
-	img3 := imaging.Overlay(src1, src2, image.Pt(x, y), 1)
+	img3 := imaging.Overlay(src1, src2, image.Pt(x, y), 0.4)
 	imaging.Save(img3, "D:\\tmp\\123\\1_Overlay.jpg")
 }
 
@@ -312,7 +313,7 @@ func TestGIFWaterMark(t *testing.T) {
 		panic(err)
 	}
 	src2, _ := imaging.Open("D:\\tmp\\123\\3.png")
-	src2 = imaging.Resize(src2, 30, 30, imaging.Blackman)
+	src2 = imaging.Resize(src2, 80, 80, imaging.Lanczos)
 
 	for _, img := range g.Image {
 		w := img.Bounds().Size().X
@@ -376,8 +377,8 @@ func TestGIFCreation2(t *testing.T) {
 
 	file1, _ := imaging.Open("D:\\tmp\\123\\4.jpg")
 	file2, _ := imaging.Open("D:\\tmp\\123\\5.jpg")
-	file1 = imaging.Resize(file1, 150, 0, imaging.Blackman)
-	file2 = imaging.Resize(file2, 150, 0, imaging.Blackman)
+	//file1 = imaging.Resize(file1, 150, 0, imaging.Blackman)
+	//file2 = imaging.Resize(file2, 150, 0, imaging.Blackman)
 
 	buf := &bytes.Buffer{}
 	if err := gif.Encode(buf, file1, nil); err != nil {
@@ -388,7 +389,7 @@ func TestGIFCreation2(t *testing.T) {
 		fmt.Println(err)
 	}
 	ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
-	ret.Delay = append(ret.Delay, 0)
+	ret.Delay = append(ret.Delay, 100)
 
 	buf.Reset()
 	if err := gif.Encode(buf, file2, nil); err != nil {
@@ -399,8 +400,105 @@ func TestGIFCreation2(t *testing.T) {
 		fmt.Println(err)
 	}
 	ret.Image = append(ret.Image, tmpimg1.(*image.Paletted))
-	ret.Delay = append(ret.Delay, 0)
+	ret.Delay = append(ret.Delay, 100)
 
 	out, _ := file.CreateFile("D:\\tmp\\123\\4-5_1.gif")
 	fmt.Println(gif.EncodeAll(out, ret))
+}
+
+// GIF打水印
+func TestGIFWaterMark2(t *testing.T) {
+	// Open a test image.
+	inputFile, _ := file.GetFile("D:\\tmp\\123\\2.gif")
+	g, err := gif.DecodeAll(inputFile)
+	if err != nil {
+		panic(err)
+	}
+	src2, _ := imaging.Open("D:\\tmp\\123\\Office365LogoWLockup.scale-140.png")
+	src2 = imaging.Resize(src2, 80, 20, imaging.Lanczos)
+
+	var ret = &gif.GIF{
+		Disposal:        g.Disposal,
+		Config:          g.Config,
+		BackgroundIndex: g.BackgroundIndex,
+		Delay:           g.Delay,
+	}
+
+	for i, img := range g.Image {
+		imaging.Save(img, "D:\\tmp\\123\\2_resize_"+convert.IntToStr(i)+".jpg")
+		x := img.Bounds().Size().X - src2.Bounds().Size().X - 20
+		y := img.Bounds().Size().Y - src2.Bounds().Size().Y - 20
+
+		img3 := imaging.Overlay(img, src2, image.Pt(x, y), 1)
+		buf := &bytes.Buffer{}
+		if err := gif.Encode(buf, img3, nil); err != nil {
+			fmt.Println(err)
+		}
+		tmpimg, err := gif.Decode(buf)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
+
+	}
+	outputFile1, _ := os.Create("D:\\tmp\\123\\2_resize_new.gif")
+	if err != nil {
+		panic(err)
+	}
+	defer outputFile1.Close()
+
+	err = gif.EncodeAll(outputFile1, ret)
+}
+
+// GIF打水印
+func TestGIFWaterMark3(t *testing.T) {
+	// Open a test image.
+	inputFile, _ := file.GetFile("D:\\tmp\\4\\origin.gif")
+	g, err := gif.DecodeAll(inputFile)
+	if err != nil {
+		panic(err)
+	}
+	inputFile.Close()
+
+	src2, _ := imaging.Open("D:\\tmp\\4\\Office365LogoWLockup.scale-140.png")
+	src2 = imaging.Resize(src2, 200, 50, imaging.Lanczos)
+
+	var ret = &gif.GIF{
+		Disposal:        g.Disposal,
+		Config:          g.Config,
+		BackgroundIndex: g.BackgroundIndex,
+		Delay:           g.Delay,
+	}
+
+	for i, img := range g.Image {
+		x := img.Bounds().Size().X - src2.Bounds().Size().X - 20
+		y := img.Bounds().Size().Y - src2.Bounds().Size().Y - 20
+
+		img3 := imaging.Overlay(img, src2, image.Pt(x, y), 1)
+		buf := &bytes.Buffer{}
+		if err := gif.Encode(buf, img3, nil); err != nil {
+			fmt.Println(err)
+		}
+		tmpimg, err := gif.Decode(buf)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
+		draw.Draw(ret.Image[i], img.Bounds(), img3, image.ZP, draw.Src)
+
+		//out1, _ := file.CreateFile("D:\\tmp\\4\\2_resize_" + convert.IntToStr(i) + ".jpg")
+		//gif.Encode(out1, ret.Image[i], nil)
+
+		//imaging.Save(ret.Image[i], "D:\\tmp\\4\\2_resize_" + convert.IntToStr(i) + ".jpg")
+
+	}
+	outputFile1, _ := os.Create("D:\\tmp\\4\\2_resize_new.gif")
+	if err != nil {
+		panic(err)
+	}
+	defer outputFile1.Close()
+
+	err = gif.EncodeAll(outputFile1, ret)
 }
