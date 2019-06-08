@@ -1,11 +1,17 @@
 package img_test
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/disintegration/imaging"
+	"github.com/hetianyi/gox/file"
 	"image"
 	"image/color"
+	"image/draw"
+	"image/gif"
+	"image/jpeg"
 	"log"
+	"os"
 	"testing"
 )
 
@@ -279,4 +285,122 @@ func TestPaste1(t *testing.T) {
 
 	img3 := imaging.Overlay(src1, src2, image.Pt(x, y), 1)
 	imaging.Save(img3, "D:\\tmp\\123\\1_Overlay.jpg")
+}
+
+// jpeg图像压缩(尺寸不变)
+func Test3(t *testing.T) {
+	// Open a test image.
+	src, _ := imaging.Open("D:\\tmp\\123\\1.jpg")
+	out, _ := file.CreateFile("D:\\tmp\\123\\1_1.jpg")
+	jpeg.Encode(out, src, &jpeg.Options{Quality: 30})
+}
+
+// jpeg图像压缩(尺寸不变)
+func Test4(t *testing.T) {
+	// Open a test image.
+	src, _ := imaging.Open("D:\\tmp\\123\\2.png")
+	out, _ := file.CreateFile("D:\\tmp\\123\\2_2.png")
+	jpeg.Encode(out, src, &jpeg.Options{Quality: 30})
+}
+
+// GIF打水印
+func TestGIFWaterMark(t *testing.T) {
+	// Open a test image.
+	inputFile, _ := file.GetFile("D:\\tmp\\123\\2.gif")
+	g, err := gif.DecodeAll(inputFile)
+	if err != nil {
+		panic(err)
+	}
+	src2, _ := imaging.Open("D:\\tmp\\123\\3.png")
+	src2 = imaging.Resize(src2, 30, 30, imaging.Blackman)
+
+	for _, img := range g.Image {
+		w := img.Bounds().Size().X
+		h := img.Bounds().Size().Y
+
+		x := img.Bounds().Size().X - src2.Bounds().Size().X - 20
+		y := img.Bounds().Size().Y - src2.Bounds().Size().Y - 20
+
+		img3 := imaging.Overlay(img, src2, image.Pt(x, y), 0.5)
+
+		draw.Draw(img, image.Rect(0, 0, w, h), img3, image.Pt(0, 0), draw.Src)
+	}
+
+	outputFile, err := os.Create("D:\\tmp\\123\\2_resize.gif")
+	if err != nil {
+		panic(err)
+	}
+	defer outputFile.Close()
+
+	err = gif.EncodeAll(outputFile, g)
+}
+
+// GIF创建
+func TestGIFCreation(t *testing.T) {
+
+	var ret = &gif.GIF{}
+
+	file1, _ := imaging.Open("D:\\tmp\\123\\4.jpg")
+	file2, _ := imaging.Open("D:\\tmp\\123\\5.jpg")
+
+	buf := &bytes.Buffer{}
+	if err := gif.Encode(buf, file1, nil); err != nil {
+		fmt.Println(err)
+	}
+	tmpimg, err := gif.Decode(buf)
+	if err != nil {
+		fmt.Println(err)
+	}
+	ret.Delay = append(ret.Delay, 100)
+	ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
+
+	buf.Reset()
+	if err := gif.Encode(buf, file2, nil); err != nil {
+		fmt.Println(err)
+	}
+	tmpimg1, err := gif.Decode(buf)
+	if err != nil {
+		fmt.Println(err)
+	}
+	ret.Delay = append(ret.Delay, 100)
+	ret.Image = append(ret.Image, tmpimg1.(*image.Paletted))
+
+	out, _ := file.CreateFile("D:\\tmp\\123\\4-5.gif")
+	fmt.Println(gif.EncodeAll(out, ret))
+}
+
+// GIF创建
+func TestGIFCreation2(t *testing.T) {
+
+	var ret = &gif.GIF{}
+
+	file1, _ := imaging.Open("D:\\tmp\\123\\4.jpg")
+	file2, _ := imaging.Open("D:\\tmp\\123\\5.jpg")
+	file1 = imaging.Resize(file1, 150, 0, imaging.Blackman)
+	file2 = imaging.Resize(file2, 150, 0, imaging.Blackman)
+
+	buf := &bytes.Buffer{}
+	if err := gif.Encode(buf, file1, nil); err != nil {
+		fmt.Println(err)
+	}
+	tmpimg, err := gif.Decode(buf)
+	if err != nil {
+		fmt.Println(err)
+	}
+	ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
+	ret.Delay = append(ret.Delay, 0)
+
+	buf.Reset()
+	if err := gif.Encode(buf, file2, nil); err != nil {
+		fmt.Println(err)
+	}
+	tmpimg1, err := gif.Decode(buf)
+	if err != nil {
+		fmt.Println(err)
+	}
+	ret.Image = append(ret.Image, tmpimg1.(*image.Paletted))
+	ret.Delay = append(ret.Delay, 0)
+
+	out, _ := file.CreateFile("D:\\tmp\\123\\4-5_1.gif")
+	fmt.Println(gif.EncodeAll(out, ret))
 }
