@@ -121,6 +121,62 @@ func TestGIFWaterMark5(t *testing.T) {
 	}
 }
 
+// GIF打水印
+func TestGIFWaterMark6(t *testing.T) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	f, err := os.Open("D:\\tmp\\4\\origin.gif")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	g, err := gif.DecodeAll(f)
+	if err != nil {
+		panic(err)
+	}
+
+	imgWidth, imgHeight := getGifDimensions(g)
+	overpaintImage := image.NewRGBA(image.Rect(0, 0, imgWidth, imgHeight))
+	draw.Draw(overpaintImage, overpaintImage.Bounds(), g.Image[0], image.ZP, draw.Src)
+
+	src2, _ := imaging.Open("D:\\tmp\\4\\Office365LogoWLockup.scale-140.png")
+	src2 = imaging.Resize(src2, 200, 50, imaging.Lanczos)
+
+	for i, frame := range g.Image {
+
+		x := frame.Bounds().Size().X - src2.Bounds().Size().X - 20
+		y := frame.Bounds().Size().Y - src2.Bounds().Size().Y - 20
+
+		img3 := imaging.Overlay(frame, src2, image.Pt(x, y), 1)
+		draw.Draw(overpaintImage, overpaintImage.Bounds(), img3, image.ZP, draw.Over)
+
+		//ut, _ := file.CreateFile("D:\\tmp\\4\\slice-" + convert.IntToStr(i) + ".bmp")
+		//gif.Encode(out, img3, nil)
+
+		buf := &bytes.Buffer{}
+		if err := gif.Encode(buf, overpaintImage, nil); err != nil {
+			fmt.Println(err)
+		}
+		tmpimg, err := gif.Decode(buf)
+		if err != nil {
+			fmt.Println(err)
+		}
+		g.Image[i] = tmpimg.(*image.Paletted)
+	}
+
+	of, err := os.Create("D:\\tmp\\4\\2_resize_new.gif")
+	if err != nil {
+		panic(err)
+	}
+	defer of.Close()
+
+	err = gif.EncodeAll(of, g)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // ref: https://stackoverflow.com/questions/33295023/how-to-split-gif-into-images
 func getGifDimensions(gif *gif.GIF) (x, y int) {
 	var lowestX int
