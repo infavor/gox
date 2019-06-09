@@ -49,9 +49,9 @@ func LoadFromReader(reader io.Reader) (*Gif, error) {
 // 为次图像添加水印
 func (src *Gif) AddWaterMark(watermark *img.Image, anchor imaging.Anchor, paddingX int, paddingY int, opacity float64) (*Gif, error) {
 	g := src.src
-	imgWidth, imgHeight := getGifDimensions(g)
-	overPaintImage := image.NewRGBA(image.Rect(0, 0, imgWidth, imgHeight))
-	draw.Draw(overPaintImage, overPaintImage.Bounds(), g.Image[0], image.ZP, draw.Src)
+	//imgWidth, imgHeight := getGifDimensions(g)
+	overPaintImage := image.NewRGBA(image.Rect(0, 0, g.Image[0].Bounds().Max.X, g.Image[0].Bounds().Max.Y))
+	//draw.Draw(overPaintImage, overPaintImage.Bounds(), g.Image[0], image.ZP, draw.Src)
 
 	watermarkImg := watermark.GetSource()
 	var buf bytes.Buffer
@@ -59,11 +59,11 @@ func (src *Gif) AddWaterMark(watermark *img.Image, anchor imaging.Anchor, paddin
 	for i, frame := range g.Image {
 		buf.Reset()
 		// calculate watermark point.
-		pot := calculateLoc(frame.Bounds().Size(), watermarkImg.Bounds().Size(), anchor, paddingX, paddingY)
+		pot := calculateLoc(overPaintImage.Bounds().Size(), watermarkImg.Bounds().Size(), anchor, paddingX, paddingY)
 		// render watermark.
 		img3 := imaging.Overlay(frame, watermarkImg, pot, opacity)
 		// draw it.
-		draw.Draw(overPaintImage, overPaintImage.Bounds(), img3, image.ZP, draw.Over)
+		draw.Draw(overPaintImage, frame.Bounds(), img3, image.ZP, draw.Over)
 		// convert image.NRGBA to image
 		if err := gif.Encode(&buf, overPaintImage, nil); err != nil {
 			return src, err
