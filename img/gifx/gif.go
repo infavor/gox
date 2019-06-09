@@ -59,7 +59,7 @@ func (src *Gif) AddWaterMark(watermark *img.Image, anchor imaging.Anchor, paddin
 	for i, frame := range g.Image {
 		buf.Reset()
 		// calculate watermark point.
-		pot := calculateLoc(overPaintImage.Bounds().Size(), watermarkImg.Bounds().Size(), anchor, paddingX, paddingY)
+		pot := img.CalculatePt(overPaintImage.Bounds().Size(), watermarkImg.Bounds().Size(), anchor, paddingX, paddingY)
 		// render watermark.
 		img3 := imaging.Overlay(frame, watermarkImg, pot, opacity)
 		// draw it.
@@ -75,6 +75,25 @@ func (src *Gif) AddWaterMark(watermark *img.Image, anchor imaging.Anchor, paddin
 		g.Image[i] = tmpImg.(*image.Paletted)
 	}
 	return src, nil
+}
+
+func Generate(images []*img.Image, delay []int, loopCount int) (*Gif, error) {
+	g := &gif.GIF{
+		LoopCount: loopCount,
+		Delay:     delay,
+	}
+	var buf bytes.Buffer
+	for _, img := range images {
+		if err := gif.Encode(&buf, img.GetSource(), nil); err != nil {
+			return nil, err
+		}
+		tmpImg, err := gif.Decode(&buf)
+		if err != nil {
+			return nil, err
+		}
+		g.Image = append(g.Image, tmpImg.(*image.Paletted))
+	}
+	return &Gif{g}, nil
 }
 
 // ref: https://stackoverflow.com/questions/33295023/how-to-split-gif-into-images
@@ -98,62 +117,4 @@ func getGifDimensions(gif *gif.GIF) (x, y int) {
 		}
 	}
 	return highestX - lowestX, highestY - lowestY
-}
-
-func calculateLoc(targetSize image.Point,
-	watermark image.Point,
-	anchor imaging.Anchor,
-	paddingX int, paddingY int) image.Point {
-	if anchor == imaging.Top {
-		return image.Point{
-			X: (targetSize.X - watermark.X) / 2,
-			Y: paddingY,
-		}
-	}
-	if anchor == imaging.TopLeft {
-		return image.Point{
-			X: paddingX,
-			Y: paddingY,
-		}
-	}
-	if anchor == imaging.TopRight {
-		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
-			Y: paddingY,
-		}
-	}
-	if anchor == imaging.Bottom {
-		return image.Point{
-			X: (targetSize.X - watermark.X) / 2,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
-		}
-	}
-	if anchor == imaging.BottomLeft {
-		return image.Point{
-			X: paddingX,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
-		}
-	}
-	if anchor == imaging.BottomRight {
-		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
-		}
-	}
-	if anchor == imaging.Left {
-		return image.Point{
-			X: paddingX,
-			Y: (targetSize.Y - watermark.Y) / 2,
-		}
-	}
-	if anchor == imaging.Right {
-		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
-			Y: (targetSize.Y - watermark.Y) / 2,
-		}
-	}
-	return image.Point{
-		X: (targetSize.X - watermark.X) / 2,
-		Y: (targetSize.Y - watermark.Y) / 2,
-	}
 }

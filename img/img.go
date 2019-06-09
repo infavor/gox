@@ -224,8 +224,8 @@ func (img *Image) Transverse() *Image {
 // Example:
 //  imaging.Paste(src1, src2, image.Pt(10, 100))
 // 粘贴将img图像粘贴到指定位置的背景图像并返回组合图像。
-func (img *Image) Paste(top image.Image, pos image.Point) *Image {
-	img.src = imaging.Paste(img.src, top, pos)
+func (img *Image) Paste(top *image.Image, pos image.Point) *Image {
+	img.src = imaging.Paste(img.src, *top, pos)
 	return img
 }
 
@@ -239,8 +239,15 @@ func (img *Image) Paste(top image.Image, pos image.Point) *Image {
 //
 //	dstImage := imaging.Overlay(imageOne, imageTwo, image.Pt(0, 0), 0.5)
 // 叠加在给定位置的背景图像上绘制img图像并返回合成图像。 不透明度参数是img图像层的不透明度，用于构成图像，它必须从0.0到1.0。
-func (img *Image) Overlay(top image.Image, pos image.Point, opacity float64) *Image {
-	img.src = imaging.Overlay(img.src, top, pos, opacity)
+func (img *Image) Overlay(top *image.Image, pos image.Point, opacity float64) *Image {
+	img.src = imaging.Overlay(img.src, *top, pos, opacity)
+	return img
+}
+
+func (img *Image) AddWaterMark(watermark *Image, anchor imaging.Anchor, paddingX int, paddingY int, opacity float64) *Image {
+	pot := CalculatePt(img.src.Bounds().Size(), watermark.GetSource().Bounds().Size(), anchor, paddingX, paddingY)
+	// render watermark.
+	img.src = imaging.Overlay(img.src, watermark.src, pot, opacity)
 	return img
 }
 
@@ -264,4 +271,62 @@ func Paste(background Image, img Image, pos image.Point) *Image {
 // Opacity parameter is the opacity of the img image layer, used to compose the images, it must be from 0.0 to 1.0.
 func Overlay(background Image, img Image, pos image.Point, opacity float64) *Image {
 	return &Image{imaging.Overlay(background.src, img.src, pos, opacity)}
+}
+
+func CalculatePt(targetSize image.Point,
+	watermark image.Point,
+	anchor imaging.Anchor,
+	paddingX int, paddingY int) image.Point {
+	if anchor == imaging.Top {
+		return image.Point{
+			X: (targetSize.X - watermark.X) / 2,
+			Y: paddingY,
+		}
+	}
+	if anchor == imaging.TopLeft {
+		return image.Point{
+			X: paddingX,
+			Y: paddingY,
+		}
+	}
+	if anchor == imaging.TopRight {
+		return image.Point{
+			X: (targetSize.X - watermark.X) - paddingX,
+			Y: paddingY,
+		}
+	}
+	if anchor == imaging.Bottom {
+		return image.Point{
+			X: (targetSize.X - watermark.X) / 2,
+			Y: (targetSize.Y - watermark.Y) - paddingY,
+		}
+	}
+	if anchor == imaging.BottomLeft {
+		return image.Point{
+			X: paddingX,
+			Y: (targetSize.Y - watermark.Y) - paddingY,
+		}
+	}
+	if anchor == imaging.BottomRight {
+		return image.Point{
+			X: (targetSize.X - watermark.X) - paddingX,
+			Y: (targetSize.Y - watermark.Y) - paddingY,
+		}
+	}
+	if anchor == imaging.Left {
+		return image.Point{
+			X: paddingX,
+			Y: (targetSize.Y - watermark.Y) / 2,
+		}
+	}
+	if anchor == imaging.Right {
+		return image.Point{
+			X: (targetSize.X - watermark.X) - paddingX,
+			Y: (targetSize.Y - watermark.Y) / 2,
+		}
+	}
+	return image.Point{
+		X: (targetSize.X - watermark.X) / 2,
+		Y: (targetSize.Y - watermark.Y) / 2,
+	}
 }
