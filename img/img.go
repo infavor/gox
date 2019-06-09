@@ -5,6 +5,7 @@ import (
 	"github.com/disintegration/imaging"
 	"image"
 	"image/color"
+	"image/gif"
 	"image/jpeg"
 	"io"
 )
@@ -251,6 +252,12 @@ func (img *Image) Compress(quality int) *Image {
 	return img
 }
 
+// AddWaterMark adds a watermark to this image.
+// 为次图像添加水印
+func AddWaterMark(watermark *Image, anchor imaging.Anchor, paddingX int, paddingY int) *Image {
+	return nil
+}
+
 // Paste pastes the img image to the background image at the specified position and returns the combined image.
 func Paste(background Image, img Image, pos image.Point) *Image {
 	return &Image{imaging.Paste(background.src, img.src, pos)}
@@ -260,4 +267,27 @@ func Paste(background Image, img Image, pos image.Point) *Image {
 // Opacity parameter is the opacity of the img image layer, used to compose the images, it must be from 0.0 to 1.0.
 func Overlay(background Image, img Image, pos image.Point, opacity float64) *Image {
 	return &Image{imaging.Overlay(background.src, img.src, pos, opacity)}
+}
+
+// ref: https://stackoverflow.com/questions/33295023/how-to-split-gif-into-images
+func getGifDimensions(gif *gif.GIF) (x, y int) {
+	var lowestX int
+	var lowestY int
+	var highestX int
+	var highestY int
+	for _, img := range gif.Image {
+		if img.Rect.Min.X < lowestX {
+			lowestX = img.Rect.Min.X
+		}
+		if img.Rect.Min.Y < lowestY {
+			lowestY = img.Rect.Min.Y
+		}
+		if img.Rect.Max.X > highestX {
+			highestX = img.Rect.Max.X
+		}
+		if img.Rect.Max.Y > highestY {
+			highestY = img.Rect.Max.Y
+		}
+	}
+	return highestX - lowestX, highestY - lowestY
 }
