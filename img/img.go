@@ -50,6 +50,11 @@ func OpenReader(src io.Reader, opts ...imaging.DecodeOption) (*Image, error) {
 	return &Image{img}, nil
 }
 
+// Clone clones and returns a new Image.
+func (img *Image) Clone() *Image {
+	return &Image{img.src}
+}
+
 // Resize resizes the image to the specified width and height using the specified resampling filter
 // and returns the transformed image. If one of width or height is 0, the image aspect ratio is preserved.
 //
@@ -220,12 +225,31 @@ func (img *Image) Transverse() *Image {
 	return img
 }
 
+// Fit scales down the image using the specified resample filter to fit the specified maximum width and height and returns the transformed image.
+// Example:
+//  dstImage := imaging.Fit(srcImage, 800, 600, imaging.Lanczos)
+// 使用指定的重采样滤镜按比例缩小图像以适合指定的最大宽度和高度，并返回变换后的图像。
+func (img *Image) Fit(width int, height int, filter imaging.ResampleFilter) *Image {
+	img.src = imaging.Fit(img.src, width, height, filter)
+	return img
+}
+
+// Fill creates an image with the specified dimensions and fills it with the scaled source image.
+// To achieve the correct aspect ratio without stretching, the source image will be cropped.
+// Example:
+//  dstImage := imaging.Fill(srcImage, 800, 600, imaging.Center, imaging.Lanczos)
+// Fill创建具有指定尺寸的图像，并使用缩放的源图像填充它。 要在不拉伸的情况下获得正确的宽高比，将裁剪源图像。
+func (img *Image) Fill(width int, height int, anchor imaging.Anchor, filter imaging.ResampleFilter) *Image {
+	img.src = imaging.Fill(img.src, width, height, anchor, filter)
+	return img
+}
+
 // Paste pastes the an image to this image at the specified position.
 // Example:
 //  imaging.Paste(src1, src2, image.Pt(10, 100))
 // 粘贴将img图像粘贴到指定位置的背景图像并返回组合图像。
-func (img *Image) Paste(top *image.Image, pos image.Point) *Image {
-	img.src = imaging.Paste(img.src, *top, pos)
+func (img *Image) Paste(top *Image, pos image.Point) *Image {
+	img.src = imaging.Paste(img.src, top.src, pos)
 	return img
 }
 
@@ -239,8 +263,8 @@ func (img *Image) Paste(top *image.Image, pos image.Point) *Image {
 //
 //	dstImage := imaging.Overlay(imageOne, imageTwo, image.Pt(0, 0), 0.5)
 // 叠加在给定位置的背景图像上绘制img图像并返回合成图像。 不透明度参数是img图像层的不透明度，用于构成图像，它必须从0.0到1.0。
-func (img *Image) Overlay(top *image.Image, pos image.Point, opacity float64) *Image {
-	img.src = imaging.Overlay(img.src, *top, pos, opacity)
+func (img *Image) Overlay(top *Image, pos image.Point, opacity float64) *Image {
+	img.src = imaging.Overlay(img.src, top.src, pos, opacity)
 	return img
 }
 
@@ -253,11 +277,13 @@ func (img *Image) AddWaterMark(watermark *Image, anchor imaging.Anchor, paddingX
 
 // JPEGQuality compressions jpeg without change the image size.
 //
-// 在不改变图片尺寸的情况下压缩JPEG图像。
+// Quality ranges from 1 to 100 inclusive, higher is better.
+//
+// 在不改变图片尺寸的情况下压缩JPEG图像。图像质量为1-100
 func (img *Image) Compress(quality int) *Image {
 	var buffer bytes.Buffer
 	jpeg.Encode(&buffer, img.src, &jpeg.Options{Quality: quality})
-	encoded, _ := imaging.Decode(&buffer, nil)
+	encoded, _ := imaging.Decode(&buffer)
 	img.src = encoded
 	return img
 }

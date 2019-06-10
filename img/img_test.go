@@ -1,504 +1,210 @@
 package img_test
 
 import (
-	"bytes"
-	"fmt"
 	"github.com/disintegration/imaging"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/file"
+	"github.com/hetianyi/gox/img"
 	"image"
 	"image/color"
-	"image/draw"
-	"image/gif"
-	"image/jpeg"
 	"log"
-	"os"
 	"testing"
 )
 
-// 图片缩放示例
-func TestResizeImage(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Resize(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-
-	// 图片按比例缩放，宽度固定，高度跟随
-	dstImage128 := imaging.Resize(src, 128, 0, imaging.Lanczos)
-
-	// Save the resulting image as JPEG.
-	err = imaging.Save(dstImage128, "D:\\tmp\\123\\1_resize.jpg")
-	if err != nil {
-		log.Fatalf("failed to save image: %v", err)
-	}
+	im.Resize(500, 0, imaging.Lanczos)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Resize.jpg")
 }
 
-// 图片裁剪示例
-func TestCropImage(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Crop(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	// Crop the original image to 300x300px size using the center anchor.
-	src1 := imaging.CropAnchor(src, 100, 100, imaging.Center)
-	src2 := imaging.CropAnchor(src, 100, 100, imaging.TopLeft)
-	src3 := imaging.CropAnchor(src, 100, 100, imaging.TopRight)
-	src4 := imaging.CropAnchor(src, 100, 100, imaging.Left)
-	src5 := imaging.CropAnchor(src, 100, 100, imaging.Right)
-	// Save the resulting image as JPEG.
-	imaging.Save(src1, "D:\\tmp\\123\\1_crop_Center.jpg")
-	imaging.Save(src2, "D:\\tmp\\123\\1_crop_TopLeft.jpg")
-	imaging.Save(src3, "D:\\tmp\\123\\1_crop_TopRight.jpg")
-	imaging.Save(src4, "D:\\tmp\\123\\1_crop_Left.jpg")
-	imaging.Save(src5, "D:\\tmp\\123\\1_crop_Right.jpg")
+	imNew := im.Clone()
+	im.Crop(500, 200, imaging.Center)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Crop.jpg")
+	imaging.Save(imNew.GetSource(), "E:\\test\\TestImage_Crop_clone.jpg")
 }
 
-// 使用高斯函数生成图像的模糊版本，Sigma参数必须为正，表示图像模糊的程度。
-func TestBlurImage(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Blur(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img1 := imaging.Blur(src, 10)
-	// Save the resulting image as JPEG.
-	imaging.Save(img1, "D:\\tmp\\123\\1_blur.jpg")
+	im.Blur(16)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Blur.jpg")
 }
 
-// 缩小并高斯模糊
-func TestResizeBlurImage(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Gray(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img1 := imaging.Resize(src, 128, 0, imaging.Lanczos)
-	img1 = imaging.Blur(img1, 2)
-	// Save the resulting image as JPEG.
-	imaging.Save(img1, "D:\\tmp\\123\\1_resize_blur.jpg")
+	im.Gray()
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Gray.jpg")
 }
 
-// 使图像变为黑白
-func TestGray(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_AdjustContrast(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img2 := imaging.Grayscale(src)
-	// Save the resulting image as JPEG.
-	imaging.Save(img2, "D:\\tmp\\123\\1_Grayscale.jpg")
+	imNew := im.Clone()
+	im.AdjustContrast(100)
+	imNew.AdjustContrast(-50)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_AdjustContrast_100.jpg")
+	imaging.Save(imNew.GetSource(), "E:\\test\\TestImage_AdjustContrast_-100.jpg")
 }
 
-// 调整图像对比度
-func TestAdjustContrast(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Sharpen(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img2 := imaging.AdjustContrast(src, 50)
-	// Save the resulting image as JPEG.
-	imaging.Save(img2, "D:\\tmp\\123\\1_AdjustContrast.jpg")
+	im.Sharpen(100)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Sharpen.jpg")
 }
 
-// 锐化图像
-func TestSharpen(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Invert(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img2 := imaging.Sharpen(src, 2)
-	// Save the resulting image as JPEG.
-	imaging.Save(img2, "D:\\tmp\\123\\1_Sharpen.jpg")
+	im.Invert()
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Invert.jpg")
 }
 
-// 反转图像
-func TestInvert(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Convolve3x3(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img3 := imaging.Invert(src) // Save the resulting image as JPEG.
-	imaging.Save(img3, "D:\\tmp\\123\\1_Invert.jpg")
+	im.Convolve3x3(img.Default3x3Kernel)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Convolve3x3.jpg")
 }
 
-// 使用卷积滤镜创建图像的浮雕版本3x3。
-func TestConvolve3x3(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Convolve5x5(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.Convolve3x3(
-		src,
-		[9]float64{
-			-4.3, -1, 5,
-			-4.3, 1, 5,
-			-4.3, -1, 5,
-		},
-		nil,
-	)
-	imaging.Save(img4, "D:\\tmp\\123\\1_Convolve3x3.jpg")
+	im.Convolve5x5(img.Default5x5Kernel)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Convolve5x5.jpg")
 }
 
-// 使用卷积滤镜创建图像的浮雕版本3x3。
-func TestConvolve5x5(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_AdjustBrightness(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.Convolve5x5(
-		src,
-		[25]float64{
-			-2, -1, 0, 1, 1,
-			-2, -1, 0, 1, 2,
-			-2, -1, 1, 1, 2,
-			-2, -1, 0, 1, 2,
-			-1, -1, 0, 1, 2,
-		},
-		nil,
-	)
-	imaging.Save(img4, "D:\\tmp\\123\\1_Convolve5x5.jpg")
+	imNew := im.Clone()
+	im.AdjustBrightness(50)
+	imNew.AdjustBrightness(-50)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_AdjustBrightness_50.jpg")
+	imaging.Save(imNew.GetSource(), "E:\\test\\TestImage_AdjustBrightness-50.jpg")
 }
 
-// 调整图像的亮度。
-func TestAdjustBrightness(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_AdjustGamma(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.AdjustBrightness(src, 50)
-	imaging.Save(img4, "D:\\tmp\\123\\1_Brightness.jpg")
+	imNew := im.Clone()
+	im.AdjustGamma(50)
+	imNew.AdjustBrightness(-50)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_AdjustGamma_50.jpg")
+	imaging.Save(imNew.GetSource(), "E:\\test\\TestImage_AdjustGamma-50.jpg")
 }
 
-// 调整图像的亮度。
-func TestAdjustGamma(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_AdjustSaturation(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.AdjustGamma(src, 0.3)
-	imaging.Save(img4, "D:\\tmp\\123\\1_AdjustGamma.jpg")
+	imNew := im.Clone()
+	im.AdjustSaturation(50)
+	imNew.AdjustBrightness(-50)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_AdjustSaturation_50.jpg")
+	imaging.Save(imNew.GetSource(), "E:\\test\\TestImage_AdjustSaturation-50.jpg")
 }
 
-// 调整图像的饱和度。
-func TestAdjustSaturation(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Rotate(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.AdjustSaturation(src, 50)
-	imaging.Save(img4, "D:\\tmp\\123\\1_AdjustSaturation.jpg")
+
+	imNew1 := im.Clone()
+	imNew2 := im.Clone()
+	imNew3 := im.Clone()
+	imNew4 := im.Clone()
+
+	im.Rotate(45, color.White)
+	imNew1.Rotate(90, color.White)
+	imNew2.Rotate(180, color.White)
+	imNew3.Rotate(270, color.White)
+	imNew4.Rotate(360, color.White)
+
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Rotate-45.jpg")
+	imaging.Save(imNew1.GetSource(), "E:\\test\\TestImage_Rotate-90.jpg")
+	imaging.Save(imNew2.GetSource(), "E:\\test\\TestImage_Rotate-180.jpg")
+	imaging.Save(imNew3.GetSource(), "E:\\test\\TestImage_Rotate-270.jpg")
+	imaging.Save(imNew4.GetSource(), "E:\\test\\TestImage_Rotate-360.jpg")
 }
 
-// 调整图像的???。
-func TestAdjustSigmoid(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
+func TestImage_Transverse(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
 	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
+		log.Panic(err)
 	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.AdjustSigmoid(src, 0, -10)
-	imaging.Save(img4, "D:\\tmp\\123\\1_AdjustSigmoid.jpg")
+	im.Transverse()
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Transverse.jpg")
 }
 
-// 逆时针旋转图像。
-func TestRotate(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
-	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
-	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.Rotate(src, 50, color.White)
-	imaging.Save(img4, "D:\\tmp\\123\\1_Rotate.jpg")
-}
-
-// 逆时针旋转图像。
-/*func Test2(t *testing.T) {
-	// Open a test image.
-	src1, _ := imaging.Open("D:\\tmp\\123\\1.jpg")
-	src12, _ := imaging.Open("D:\\tmp\\123\\1.jpg")
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.Rotate(src, 50, color.White)
-	imaging.Save(img4, "D:\\tmp\\123\\1_Rotate.jpg")
-}*/
-
-// 左右翻转图像
-func TestTranspose(t *testing.T) {
-	// Open a test image.
-	src, err := imaging.Open("D:\\tmp\\123\\1.jpg")
-	if err != nil {
-		log.Fatalf("failed to open image: %v", err)
-	}
-	fmt.Println(src.Bounds().Size().X, ", ", src.Bounds().Size().Y)
-	img4 := imaging.Transverse(src)
-	img4 = imaging.Rotate90(img4)
-	imaging.Save(img4, "D:\\tmp\\123\\1_Transpose.jpg")
-}
-
-// 覆盖子图像到背景图像(子图像不透明)
 func TestPaste(t *testing.T) {
-	// Open a test image.
-	src1, _ := imaging.Open("D:\\tmp\\123\\1.jpg")
-	src2, _ := imaging.Open("D:\\tmp\\123\\3.png")
-
-	x := src1.Bounds().Size().X - src2.Bounds().Size().X
-	y := src1.Bounds().Size().Y - src2.Bounds().Size().Y
-
-	img3 := imaging.Paste(src1, src2, image.Pt(x, y))
-
-	imaging.Save(img3, "D:\\tmp\\123\\1_Paste.jpg")
+	im, _ := img.OpenLocalFile("E:\\test\\1.jpg")          // 1900x1283
+	im1, _ := img.OpenLocalFile("E:\\test\\watermark.png") // 1900x1283
+	im.Paste(im1, image.Pt(1000, 200))
+	imaging.Save(im.GetSource(), "E:\\test\\TestPaste.jpg")
 }
 
-// 覆盖子图像到背景图像(子图像透明)(打水印)
-func TestPaste1(t *testing.T) {
-	// Open a test image.
-	src1, _ := imaging.Open("D:\\tmp\\123\\1.jpg")
-	src2, _ := imaging.Open("D:\\tmp\\123\\3.png")
-
-	x := src1.Bounds().Size().X - src2.Bounds().Size().X - 20
-	y := src1.Bounds().Size().Y - src2.Bounds().Size().Y - 20
-
-	img3 := imaging.Overlay(src1, src2, image.Pt(x, y), 0.4)
-	imaging.Save(img3, "D:\\tmp\\123\\1_Overlay.jpg")
+func TestOverlay(t *testing.T) {
+	im, _ := img.OpenLocalFile("E:\\test\\1.jpg")          // 1900x1283
+	im1, _ := img.OpenLocalFile("E:\\test\\watermark.png") // 1900x1283
+	im.Overlay(im1, image.Pt(1000, 200), 1)
+	imaging.Save(im.GetSource(), "E:\\test\\TestOverlay.jpg")
 }
 
-// jpeg图像压缩(尺寸不变)
-func Test3(t *testing.T) {
-	// Open a test image.
-	src, _ := imaging.Open("D:\\tmp\\123\\1.jpg")
-	out, _ := file.CreateFile("D:\\tmp\\123\\1_1.jpg")
-	jpeg.Encode(out, src, &jpeg.Options{Quality: 30})
+func TestImage_AddWaterMark(t *testing.T) {
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
+	if err != nil {
+		log.Panic(err)
+	}
+	watermark, err := img.OpenLocalFile("E:\\test\\watermark.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	im.AddWaterMark(watermark, imaging.BottomRight, 20, 20, 0.5)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_AddWaterMark.jpg")
 }
 
-// jpeg图像压缩(尺寸不变)
-func Test4(t *testing.T) {
-	// Open a test image.
-	src, _ := imaging.Open("D:\\tmp\\123\\2.png")
-	out, _ := file.CreateFile("D:\\tmp\\123\\2_2.png")
-	jpeg.Encode(out, src, &jpeg.Options{Quality: 30})
+func TestImage_Compress(t *testing.T) {
+	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im.Compress(10)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Compress.jpg")
 }
 
-// GIF打水印
-func TestGIFWaterMark(t *testing.T) {
-	// Open a test image.
-	inputFile, _ := file.GetFile("D:\\tmp\\123\\2.gif")
-	g, err := gif.DecodeAll(inputFile)
-	if err != nil {
-		panic(err)
-	}
-	src2, _ := imaging.Open("D:\\tmp\\123\\3.png")
-	src2 = imaging.Resize(src2, 80, 80, imaging.Lanczos)
-
-	for _, img := range g.Image {
-		w := img.Bounds().Size().X
-		h := img.Bounds().Size().Y
-
-		x := img.Bounds().Size().X - src2.Bounds().Size().X - 20
-		y := img.Bounds().Size().Y - src2.Bounds().Size().Y - 20
-
-		img3 := imaging.Overlay(img, src2, image.Pt(x, y), 0.5)
-
-		draw.Draw(img, image.Rect(0, 0, w, h), img3, image.Pt(0, 0), draw.Src)
-	}
-
-	outputFile, err := os.Create("D:\\tmp\\123\\2_resize.gif")
-	if err != nil {
-		panic(err)
-	}
-	defer outputFile.Close()
-
-	err = gif.EncodeAll(outputFile, g)
+func TestImage_Fit(t *testing.T) {
+	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im.Fit(500, 500, imaging.Lanczos)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Fit.jpg")
 }
 
-// GIF创建
-func TestGIFCreation(t *testing.T) {
-
-	var ret = &gif.GIF{}
-
-	file1, _ := imaging.Open("D:\\tmp\\123\\4.jpg")
-	file2, _ := imaging.Open("D:\\tmp\\123\\5.jpg")
-
-	buf := &bytes.Buffer{}
-	if err := gif.Encode(buf, file1, nil); err != nil {
-		fmt.Println(err)
-	}
-	tmpimg, err := gif.Decode(buf)
-	if err != nil {
-		fmt.Println(err)
-	}
-	ret.Delay = append(ret.Delay, 100)
-	ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
-
-	buf.Reset()
-	if err := gif.Encode(buf, file2, nil); err != nil {
-		fmt.Println(err)
-	}
-	tmpimg1, err := gif.Decode(buf)
-	if err != nil {
-		fmt.Println(err)
-	}
-	ret.Delay = append(ret.Delay, 100)
-	ret.Image = append(ret.Image, tmpimg1.(*image.Paletted))
-
-	out, _ := file.CreateFile("D:\\tmp\\123\\4-5.gif")
-	fmt.Println(gif.EncodeAll(out, ret))
-}
-
-// GIF创建
-func TestGIFCreation2(t *testing.T) {
-
-	var ret = &gif.GIF{}
-
-	file1, _ := imaging.Open("D:\\tmp\\123\\4.jpg")
-	file2, _ := imaging.Open("D:\\tmp\\123\\5.jpg")
-	//file1 = imaging.Resize(file1, 150, 0, imaging.Blackman)
-	//file2 = imaging.Resize(file2, 150, 0, imaging.Blackman)
-
-	buf := &bytes.Buffer{}
-	if err := gif.Encode(buf, file1, nil); err != nil {
-		fmt.Println(err)
-	}
-	tmpimg, err := gif.Decode(buf)
-	if err != nil {
-		fmt.Println(err)
-	}
-	ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
-	ret.Delay = append(ret.Delay, 100)
-
-	buf.Reset()
-	if err := gif.Encode(buf, file2, nil); err != nil {
-		fmt.Println(err)
-	}
-	tmpimg1, err := gif.Decode(buf)
-	if err != nil {
-		fmt.Println(err)
-	}
-	ret.Image = append(ret.Image, tmpimg1.(*image.Paletted))
-	ret.Delay = append(ret.Delay, 100)
-
-	out, _ := file.CreateFile("D:\\tmp\\123\\4-5_1.gif")
-	fmt.Println(gif.EncodeAll(out, ret))
-}
-
-// GIF打水印
-func TestGIFWaterMark2(t *testing.T) {
-	// Open a test image.
-	inputFile, _ := file.GetFile("D:\\tmp\\123\\2.gif")
-	g, err := gif.DecodeAll(inputFile)
-	if err != nil {
-		panic(err)
-	}
-	src2, _ := imaging.Open("D:\\tmp\\123\\Office365LogoWLockup.scale-140.png")
-	src2 = imaging.Resize(src2, 80, 20, imaging.Lanczos)
-
-	var ret = &gif.GIF{
-		Disposal:        g.Disposal,
-		Config:          g.Config,
-		BackgroundIndex: g.BackgroundIndex,
-		Delay:           g.Delay,
-	}
-
-	for i, img := range g.Image {
-		imaging.Save(img, "D:\\tmp\\123\\2_resize_"+convert.IntToStr(i)+".jpg")
-		x := img.Bounds().Size().X - src2.Bounds().Size().X - 20
-		y := img.Bounds().Size().Y - src2.Bounds().Size().Y - 20
-
-		img3 := imaging.Overlay(img, src2, image.Pt(x, y), 1)
-		buf := &bytes.Buffer{}
-		if err := gif.Encode(buf, img3, nil); err != nil {
-			fmt.Println(err)
-		}
-		tmpimg, err := gif.Decode(buf)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
-
-	}
-	outputFile1, _ := os.Create("D:\\tmp\\123\\2_resize_new.gif")
-	if err != nil {
-		panic(err)
-	}
-	defer outputFile1.Close()
-
-	err = gif.EncodeAll(outputFile1, ret)
-}
-
-// GIF打水印
-func TestGIFWaterMark3(t *testing.T) {
-	// Open a test image.
-	inputFile, _ := file.GetFile("D:\\tmp\\4\\origin.gif")
-	g, err := gif.DecodeAll(inputFile)
-	if err != nil {
-		panic(err)
-	}
-	inputFile.Close()
-
-	src2, _ := imaging.Open("D:\\tmp\\4\\Office365LogoWLockup.scale-140.png")
-	src2 = imaging.Resize(src2, 200, 50, imaging.Lanczos)
-
-	var ret = &gif.GIF{
-		Disposal:        g.Disposal,
-		Config:          g.Config,
-		BackgroundIndex: g.BackgroundIndex,
-		Delay:           g.Delay,
-	}
-
-	for i, img := range g.Image {
-		x := img.Bounds().Size().X - src2.Bounds().Size().X - 20
-		y := img.Bounds().Size().Y - src2.Bounds().Size().Y - 20
-
-		img3 := imaging.Overlay(img, src2, image.Pt(x, y), 1)
-		buf := &bytes.Buffer{}
-		if err := gif.Encode(buf, img3, nil); err != nil {
-			fmt.Println(err)
-		}
-		tmpimg, err := gif.Decode(buf)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		ret.Image = append(ret.Image, tmpimg.(*image.Paletted))
-		draw.Draw(ret.Image[i], img.Bounds(), img3, image.ZP, draw.Src)
-
-		//out1, _ := file.CreateFile("D:\\tmp\\4\\2_resize_" + convert.IntToStr(i) + ".jpg")
-		//gif.Encode(out1, ret.Image[i], nil)
-
-		//imaging.Save(ret.Image[i], "D:\\tmp\\4\\2_resize_" + convert.IntToStr(i) + ".jpg")
-
-	}
-	outputFile1, _ := os.Create("D:\\tmp\\4\\2_resize_new.gif")
-	if err != nil {
-		panic(err)
-	}
-	defer outputFile1.Close()
-
-	err = gif.EncodeAll(outputFile1, ret)
+func TestImage_Fill(t *testing.T) {
+	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im.Fill(500, 500, imaging.Center, imaging.Lanczos)
+	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Fill.jpg")
 }
