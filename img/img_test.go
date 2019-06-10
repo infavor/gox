@@ -2,10 +2,16 @@ package img_test
 
 import (
 	"github.com/disintegration/imaging"
+	"github.com/hetianyi/gox/file"
 	"github.com/hetianyi/gox/img"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 	"image"
 	"image/color"
+	"image/png"
 	"log"
+	"os"
 	"testing"
 )
 
@@ -207,4 +213,46 @@ func TestImage_Fill(t *testing.T) {
 	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
 	im.Fill(500, 500, imaging.Center, imaging.Lanczos)
 	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Fill.jpg")
+}
+
+func TestSaveToFile(t *testing.T) {
+	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im.Blur(8)
+	img.SaveToFile(im, "E:\\test\\TestSaveToFile.jpg")
+}
+
+func TestSave(t *testing.T) {
+	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im.Blur(8)
+
+	out, _ := file.CreateFile("E:\\test\\TestSave.jpg")
+
+	img.Save(im, out, imaging.JPEG)
+}
+
+func TestText(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 300, 100))
+	addLabel(img, 20, 30, "Hello Go")
+
+	f, err := os.Create("E:\\test\\TestText.jpg")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if err := png.Encode(f, img); err != nil {
+		panic(err)
+	}
+}
+
+func addLabel(img *image.RGBA, x, y int, label string) {
+	col := color.RGBA{200, 100, 0, 255}
+	point := fixed.Point26_6{fixed.Int26_6(x * 64), fixed.Int26_6(y * 64)}
+
+	d := &font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(col),
+		Face: basicfont.Face7x13,
+		Dot:  point,
+	}
+	d.DrawString(label)
 }

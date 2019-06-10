@@ -3,6 +3,7 @@ package img
 import (
 	"bytes"
 	"github.com/disintegration/imaging"
+	"github.com/hetianyi/gox/file"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -244,6 +245,25 @@ func (img *Image) Fill(width int, height int, anchor imaging.Anchor, filter imag
 	return img
 }
 
+/*
+func (img *Image) AddLabel(x, y int, label string) *Image {
+	addLabel(img.src.(*image.RGBA), x, y, label)
+	return img
+}
+
+func addLabel(img *image.RGBA, x, y int, label string) {
+	col := color.RGBA{200, 100, 0, 255}
+	point := fixed.Point26_6{fixed.Int26_6(x * 64), fixed.Int26_6(y * 64)}
+
+	d := &font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(col),
+		Face: basicfont.Face7x13,
+		Dot:  point,
+	}
+	d.DrawString(label)
+}*/
+
 // Paste pastes the an image to this image at the specified position.
 // Example:
 //  imaging.Paste(src1, src2, image.Pt(10, 100))
@@ -355,4 +375,25 @@ func CalculatePt(targetSize image.Point,
 		X: (targetSize.X - watermark.X) / 2,
 		Y: (targetSize.Y - watermark.Y) / 2,
 	}
+}
+
+func SaveToFile(img *Image, filename string, opts ...imaging.EncodeOption) error {
+	f, err := imaging.FormatFromFilename(filename)
+	if err != nil {
+		return err
+	}
+	out, err := file.CreateFile(filename)
+	if err != nil {
+		return err
+	}
+	err = imaging.Encode(out, img.src, f, opts...)
+	errc := out.Close()
+	if err == nil {
+		err = errc
+	}
+	return err
+}
+
+func Save(img *Image, out io.Writer, format imaging.Format, opts ...imaging.EncodeOption) error {
+	return imaging.Encode(out, img.src, format, opts...)
 }

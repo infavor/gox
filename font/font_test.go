@@ -1,0 +1,140 @@
+package font_test
+
+import (
+	"bufio"
+	"fmt"
+	"github.com/golang/freetype"
+	"github.com/hetianyi/gox/img"
+	"golang.org/x/image/font"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
+	"io/ioutil"
+	"log"
+	"os"
+	"testing"
+)
+
+var (
+	dpi      float64 = 72
+	fontfile         = "E:\\test\\STXINGKA.TTF"
+	hinting          = "none"
+	size     float64 = 12
+	spacing  float64 = 1.5
+	wonb             = false
+)
+
+var text = []string{
+	"’你好卡萨丁看书看到卡萨丁哪看得看哈喽Twas brillig, and the slithy toves",
+	"Did gyre and gimble in the wabe;",
+	"All mimsy were the borogoves,",
+	"And the mome raths outgrabe.",
+	"",
+	"“Beware the Jabberwock, my son!",
+	"The jaws that bite, the claws that catch!",
+	"Beware the Jubjub bird, and shun",
+	"The frumious Bandersnatch!”",
+	"",
+	"He took his vorpal sword in hand:",
+	"Long time the manxome foe he sought—",
+	"So rested he by the Tumtum tree,",
+	"And stood awhile in thought.",
+	"",
+	"And as in uffish thought he stood,",
+	"The Jabberwock, with eyes of flame,",
+	"Came whiffling through the tulgey wood,",
+	"And burbled as it came!",
+	"",
+	"One, two! One, two! and through and through",
+	"The vorpal blade went snicker-snack!",
+	"He left it dead, and with its head",
+	"He went galumphing back.",
+	"",
+	"“And hast thou slain the Jabberwock?",
+	"Come to my arms, my beamish boy!",
+	"O frabjous day! Callooh! Callay!”",
+	"He chortled in his joy.",
+	"",
+	"’Twas brillig, and the slithy toves",
+	"Did gyre and gimble in the wabe;",
+	"All mimsy were the borogoves,",
+	"And the mome raths outgrabe.",
+}
+
+func Test1(t *testing.T) {
+	// Read the font data.
+	fontBytes, err := ioutil.ReadFile(fontfile)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	f, err := freetype.ParseFont(fontBytes)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// Initialize the context.
+	fg := image.Black
+	ruler := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
+	if wonb {
+		fg = image.White
+		ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
+	}
+	base, _ := img.OpenLocalFile("E:\\test\\2.jpg")
+	rgba := image.NewRGBA(image.Rect(0, 0, base.GetSource().Bounds().Max.X, base.GetSource().Bounds().Max.Y))
+	draw.Draw(rgba, rgba.Bounds(), base.GetSource(), image.ZP, draw.Src)
+
+	draw.Draw(rgba, rgba.Bounds(), base.GetSource(), image.ZP, draw.Src)
+	c := freetype.NewContext()
+	c.SetDPI(dpi)
+	c.SetFont(f)
+	c.SetFontSize(size)
+	c.SetClip(rgba.Bounds())
+	c.SetDst(rgba)
+	c.SetSrc(fg)
+	switch hinting {
+	default:
+		c.SetHinting(font.HintingNone)
+	case "full":
+		c.SetHinting(font.HintingFull)
+	}
+
+	// Draw the guidelines.
+	for i := 0; i < 200; i++ {
+		rgba.Set(10, 10+i, ruler)
+		rgba.Set(10+i, 10, ruler)
+	}
+
+	// Draw the text.
+	pt := freetype.Pt(10, 10+int(c.PointToFixed(size)>>6))
+	for _, s := range text {
+		_, err = c.DrawString(s, pt)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		pt.Y += c.PointToFixed(size * spacing)
+	}
+
+	// Save that RGBA image to disk.
+	outFile, err := os.Create("E:\\test\\out.png")
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	defer outFile.Close()
+	b := bufio.NewWriter(outFile)
+	err = png.Encode(b, rgba)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	err = b.Flush()
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println("Wrote out.png OK.")
+}
