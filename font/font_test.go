@@ -7,7 +7,6 @@ import (
 	"github.com/hetianyi/gox/img"
 	"golang.org/x/image/font"
 	"image"
-	"image/color"
 	"image/draw"
 	"image/png"
 	"io/ioutil"
@@ -17,12 +16,12 @@ import (
 )
 
 var (
-	dpi      float64 = 72
-	fontfile         = "E:\\test\\STXINGKA.TTF"
-	hinting          = "none"
-	size     float64 = 12
-	spacing  float64 = 1.5
-	wonb             = false
+	dpi      float64 = 72                       // screen resolution in Dots Per Inch
+	fontfile         = "E:\\test\\STXINGKA.TTF" // filename of the ttf font
+	hinting          = "none"                   // none | full
+	size     float64 = 52                       // font size in points
+	spacing  float64 = 1.5                      // line spacing (e.g. 2 means double spaced)
+	wonb             = true                     // white text on a black background
 )
 
 var text = []string{
@@ -77,23 +76,23 @@ func Test1(t *testing.T) {
 
 	// Initialize the context.
 	fg := image.Black
-	ruler := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
 	if wonb {
 		fg = image.White
-		ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
 	}
 	base, _ := img.OpenLocalFile("E:\\test\\2.jpg")
+	// 以背景图的尺寸创建新画布
 	rgba := image.NewRGBA(image.Rect(0, 0, base.GetSource().Bounds().Max.X, base.GetSource().Bounds().Max.Y))
-	draw.Draw(rgba, rgba.Bounds(), base.GetSource(), image.ZP, draw.Src)
 
+	// 将背景图画到画布
 	draw.Draw(rgba, rgba.Bounds(), base.GetSource(), image.ZP, draw.Src)
+	// 将freetype绑定到该画布
 	c := freetype.NewContext()
 	c.SetDPI(dpi)
 	c.SetFont(f)
 	c.SetFontSize(size)
 	c.SetClip(rgba.Bounds())
-	c.SetDst(rgba)
-	c.SetSrc(fg)
+	c.SetDst(rgba) // 将freetype绑定到该画布
+	c.SetSrc(fg)   // 设置字体颜色
 	switch hinting {
 	default:
 		c.SetHinting(font.HintingNone)
@@ -101,13 +100,7 @@ func Test1(t *testing.T) {
 		c.SetHinting(font.HintingFull)
 	}
 
-	// Draw the guidelines.
-	for i := 0; i < 200; i++ {
-		rgba.Set(10, 10+i, ruler)
-		rgba.Set(10+i, 10, ruler)
-	}
-
-	// Draw the text.
+	// 绘制文字
 	pt := freetype.Pt(10, 10+int(c.PointToFixed(size)>>6))
 	for _, s := range text {
 		_, err = c.DrawString(s, pt)
@@ -115,10 +108,10 @@ func Test1(t *testing.T) {
 			log.Println(err)
 			return
 		}
-		pt.Y += c.PointToFixed(size * spacing)
+		pt.Y += c.PointToFixed(size * 0.5)
 	}
 
-	// Save that RGBA image to disk.
+	// 保存
 	outFile, err := os.Create("E:\\test\\out.png")
 	if err != nil {
 		log.Println(err)

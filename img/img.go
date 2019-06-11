@@ -38,8 +38,14 @@ func OpenLocalFile(filename string, opts ...imaging.DecodeOption) (*Image, error
 	return &Image{img}, nil
 }
 
+// GetSource returns source image.Image.
 func (img *Image) GetSource() image.Image {
 	return img.src
+}
+
+func (img *Image) SetSource(src image.Image) *Image {
+	img.src = src
+	return img
 }
 
 // OpenReader gets an Image using a reader.
@@ -396,4 +402,12 @@ func SaveToFile(img *Image, filename string, opts ...imaging.EncodeOption) error
 
 func Save(img *Image, out io.Writer, format imaging.Format, opts ...imaging.EncodeOption) error {
 	return imaging.Encode(out, img.src, format, opts...)
+}
+
+func NewRGBA(r image.Rectangle) *image.RGBA {
+	return image.NewRGBA(r)
+}
+
+func NewImage(src image.Image) *Image {
+	return &Image{src}
 }
