@@ -25,6 +25,7 @@ type VCode struct {
 }
 
 func (v *VCode) Generate(content string, anchor imaging.Anchor, paddingX int, paddingY int) *image.RGBA {
+	defer func() { v.ctx = nil }()
 	target := img.NewRGBA(v.Size)
 	if v.ctx == nil {
 		v.ctx = freetype.NewContext()
@@ -43,11 +44,16 @@ func (v *VCode) Generate(content string, anchor imaging.Anchor, paddingX int, pa
 	}
 	face := truetype.NewFace(v.Font, &opt)
 	m := face.Metrics()
-	fmt.Println("Ascent: ", m.Ascent.Floor(), "Descent: ", m.Descent.Ceil(), "Height: ", m.Height)
+	fmt.Println("Ascent: ", m.Ascent.Ceil(), "Descent: ",
+		m.Descent.Ceil(),
+		"XHeight: ", m.XHeight.Ceil(),
+		"CapHeight: ", m.CapHeight.Ceil(),
+		"Height: ", m.Height.Ceil(),
+	)
 
 	pot := img.CalculatePt(v.Size.Max, image.Point{0, 0}, anchor, paddingX, paddingY)
 	fmt.Println(freetype.Pt(pot.X+int(v.FontSize), pot.Y))
-	_, err := v.ctx.DrawString(content, freetype.Pt(pot.X, pot.Y+m.Ascent.Ceil()-m.Descent.Ceil()/2))
+	_, err := v.ctx.DrawString(content, freetype.Pt(pot.X, pot.Y+(m.Ascent.Ceil()-m.Descent.Ceil())))
 	if err != nil {
 		return nil
 	}
