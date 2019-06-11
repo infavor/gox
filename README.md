@@ -31,7 +31,8 @@ gox is a go library integrated with many useful tools.
 
 - httpx
 
-mock实现了简单的链式http请求构造器，可以用一行代码搞定http请求。
+  - mock实现了简单的链式http请求构造器，可以用一行代码搞定http请求。
+  - upload实现了http文件上传逻辑封装处理。
 
 - img
 

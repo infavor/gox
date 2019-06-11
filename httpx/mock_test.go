@@ -2,6 +2,7 @@ package httpx_test
 
 import (
 	"encoding/json"
+	"github.com/hetianyi/gox/file"
 	"github.com/hetianyi/gox/httpx"
 	"github.com/hetianyi/gox/logger"
 	"github.com/sirupsen/logrus"
@@ -93,6 +94,44 @@ func TestMockPost1(t *testing.T) {
 		Post().
 		Body(map[string][]string{"id": {"10004"}}).
 		Success(new(map[string]interface{})).Error(func(status int, response []byte) {
+		logrus.Error("status ", status, ", response: ", string(response))
+	}).Do()
+	if err != nil {
+		logrus.Error(err)
+	} else {
+		bs, _ := json.MarshalIndent(result, "", " ")
+		logrus.Info(string(bs))
+	}
+	logrus.Info("end ", time.Now().UTC())
+}
+
+func TestMockPost2(t *testing.T) {
+	logrus.Info("start ", time.Now().UTC())
+	result, _, err := httpx.Mock().URL("http://cdn.yifuls.com/api/cdn/detail").
+		Post().
+		Body(map[string][]string{"id": {"10004"}}).
+		Success(nil).Error(func(status int, response []byte) {
+		logrus.Error("status ", status, ", response: ", string(response))
+	}).Do()
+	if err != nil {
+		logrus.Error(err)
+	} else {
+		bs, _ := json.MarshalIndent(result, "", " ")
+		logrus.Info(string(bs))
+	}
+	logrus.Info("end ", time.Now().UTC())
+}
+
+func TestMockPost3(t *testing.T) {
+	out, err := file.CreateFile("D:\\tmp\\response.pdf")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	defer out.Close()
+	logrus.Info("start ", time.Now().UTC())
+	result, _, err := httpx.Mock().URL("https://doctool.cbim.org.cn/docgen/warehouse/2631c7fca887dc9c097188b40232f1e8.pdf?filename=%E4%B8%AD%E5%9B%BD%E5%86%9C%E4%B8%9A%E7%A7%91%E6%8A%80%E5%9B%BD%E9%99%85%E4%BA%A4%E6%B5%81%E4%B8%AD%E5%BF%83.pdf").
+		Get().
+		Success(out).Error(func(status int, response []byte) {
 		logrus.Error("status ", status, ", response: ", string(response))
 	}).Do()
 	if err != nil {

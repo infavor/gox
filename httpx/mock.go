@@ -7,6 +7,7 @@ import (
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/convert"
 	json "github.com/json-iterator/go"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -42,6 +43,8 @@ func init() {
 	allowedResponseTypes["string"] = true
 	allowedResponseTypes["struct"] = true
 	allowedResponseTypes["map"] = true
+	allowedResponseTypes["nil"] = true
+	allowedResponseTypes["io.Writer"] = true
 
 	httpClient = &http.Client{
 		Timeout: time.Second * 20,
@@ -325,6 +328,12 @@ func (m *mock) isSuccess(code int) bool {
 
 // checkResponseType returns the type of response data container.
 func checkResponseType(resp interface{}) string {
+	if resp == nil {
+		return "nil"
+	}
+	if _, c := resp.(io.Writer); c {
+		return "io.Writer"
+	}
 	typ := reflect.TypeOf(resp)
 	for {
 		if typ.Kind() == reflect.Ptr {
@@ -339,6 +348,11 @@ func checkResponseType(resp interface{}) string {
 // convertResponse converts response to the type of response.
 func convertResponse(typeName string, response string, responseContainer interface{}) (interface{}, error) {
 	switch typeName {
+	case "nil":
+		return response, nil
+	case "io.Writer":
+		(responseContainer.(io.Writer)).Write([]byte(response))
+		return response, nil
 	case "int":
 		return convert.StrToInt(response)
 	case "int64":
