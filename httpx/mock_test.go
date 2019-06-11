@@ -6,6 +6,11 @@ import (
 	"github.com/hetianyi/gox/httpx"
 	"github.com/hetianyi/gox/logger"
 	"github.com/sirupsen/logrus"
+	"io"
+	"io/ioutil"
+	"mime/multipart"
+	"net/http"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -134,6 +139,75 @@ func TestMockPost3(t *testing.T) {
 		Success(out).Error(func(status int, response []byte) {
 		logrus.Error("status ", status, ", response: ", string(response))
 	}).Do()
+	if err != nil {
+		logrus.Error(err)
+	} else {
+		bs, _ := json.MarshalIndent(result, "", " ")
+		logrus.Info(string(bs))
+	}
+	logrus.Info("end ", time.Now().UTC())
+}
+
+func TestMultipart(t *testing.T) {
+
+	httpClient := &http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	r, w := io.Pipe()
+	m := multipart.NewWriter(w)
+	go func() {
+		defer w.Close()
+		defer m.Close()
+
+		o, _ := m.CreateFormField("Name")
+		o.Write([]byte("zhangsan"))
+		o, _ = m.CreateFormField("Name")
+		o.Write([]byte("lisi"))
+
+		fi, _ := file.GetFile("E:\\godfs-storage\\123.zip")
+		defer fi.Close()
+		o, _ = m.CreateFormFile("secrets", "123.zip")
+		io.Copy(o, fi)
+	}()
+
+	req, err := http.NewRequest("POST", "http://localhost:8001/upload", r)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	req.Header.Add("Content-Type", m.FormDataContentType())
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	logrus.Info(string(bs))
+}
+
+func TestMockUpload(t *testing.T) {
+	httpx.SetTTL(0)
+	logrus.Info("start ", time.Now().UTC())
+	result, _, err := httpx.Mock().URL("http://localhost:8001/upload").
+		Success(nil).
+		Error(func(status int, response []byte) {
+			logrus.Error("status ", status, ", response: ", string(response))
+		}).
+		Multipart(func(writer *multipart.Writer) {
+			o, _ := writer.CreateFormField("Name")
+			o.Write([]byte("zhangsan"))
+			o, _ = writer.CreateFormField("Name")
+			o.Write([]byte("lisi"))
+
+			fi, _ := file.GetFile("F:\\Software\\fastdfs_client_v1.24.jar")
+			defer fi.Close()
+			o, _ = writer.CreateFormFile("secrets", filepath.Base("F:\\Software\\fastdfs_client_v1.24.jar"))
+			io.Copy(o, fi)
+		}).
+		Do()
 	if err != nil {
 		logrus.Error(err)
 	} else {

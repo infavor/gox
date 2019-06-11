@@ -9,6 +9,7 @@ import (
 	json "github.com/json-iterator/go"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"reflect"
 	"strings"
@@ -26,6 +27,7 @@ const (
 	METHOD_CONNECT                     = "CONNECT"
 	CONTENT_TYPE_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
 	CONTENT_TYPE_JSON                  = "application/json"
+	CONTENT_TYPE_MULTIPART             = "multipart/form-data"
 )
 
 var (
@@ -51,6 +53,13 @@ func init() {
 	}
 }
 
+// SetTTL sets http client request timeout value.
+// Default timeout value is 20s.
+// A Timeout of zero means no timeout.
+func SetTTL(timeout time.Duration) {
+	httpClient.Timeout = timeout
+}
+
 // mock is a fake http request instance.
 type mock struct {
 	url               string
@@ -61,6 +70,7 @@ type mock struct {
 	body              []byte
 	request           http.Request
 	response          http.Response
+	multipartFiller   func(writer *multipart.Writer)
 	responseContainer interface{}
 	callback          func(status int, response []byte)
 	successCodes      []int
@@ -101,12 +111,13 @@ func (m *mock) Headers(headers map[string]string) *mock {
 // ContentType sets ContentType of the mock.
 func (m *mock) ContentType(contentType string) *mock {
 	if strings.HasPrefix(contentType, CONTENT_TYPE_X_WWW_FORM_URLENCODED) ||
-		strings.HasPrefix(contentType, CONTENT_TYPE_JSON) {
+		strings.HasPrefix(contentType, CONTENT_TYPE_JSON) ||
+		strings.HasPrefix(contentType, CONTENT_TYPE_MULTIPART) {
 		m.contentType = contentType
 	} else {
 		panic(errors.New("not supported contentType: '" + contentType +
 			"', contentType is currently only support " + "'" + CONTENT_TYPE_X_WWW_FORM_URLENCODED +
-			" and '" + CONTENT_TYPE_JSON + "'"))
+			"', '" + CONTENT_TYPE_MULTIPART + "' and '" + CONTENT_TYPE_JSON + "'"))
 	}
 	return m
 }
@@ -139,8 +150,10 @@ func (m *mock) Parameter(name, value string) *mock {
 	return m
 }
 
-// Body must be a type like map[string][]string or custom struct
+// Body must be a type like map[string][]string or custom struct.
+//
 // if contentType is 'application/x-www-form-urlencoded' then type of body must be type map[string][]string,
+//
 // if contentType is 'application/json' then type of body could be any.
 func (m *mock) Body(body interface{}) *mock {
 	if body == nil {
@@ -151,12 +164,26 @@ func (m *mock) Body(body interface{}) *mock {
 	if m.contentType == CONTENT_TYPE_JSON {
 		jv, _ := json.Marshal(body)
 		m.body = jv
+	} else if m.contentType == CONTENT_TYPE_MULTIPART {
+		if bodyType != "map[string][]string" {
+			panic(errors.New("body type must be 'map[string][]string' if contentType is 'application/x-www-form-urlencoded'"))
+		}
+		m.body = encodeParameters(body.(map[string][]string))
 	} else {
 		if bodyType != "map[string][]string" {
 			panic(errors.New("body type must be 'map[string][]string' if contentType is 'application/x-www-form-urlencoded'"))
 		}
 		m.body = encodeParameters(body.(map[string][]string))
 	}
+	return m
+}
+
+// Multipart add multipart content to request body.
+//
+// if Multipart() is called, the request content will set to 'multipart/form-data' automatically.
+func (m *mock) Multipart(multipartFiller func(writer *multipart.Writer)) *mock {
+	m.multipartFiller = multipartFiller
+	m.method = "POST"
 	return m
 }
 
@@ -184,13 +211,34 @@ func (m *mock) Error(callback func(status int, response []byte)) *mock {
 // which will send the request and return the result.
 func (m *mock) Do() (interface{}, int, error) {
 	paramsStr := string(encodeParameters(m.parameterMap))
-	req, err := http.NewRequest(m.method, gox.TValue(paramsStr == "", m.url, m.url+"?"+paramsStr).(string), bytes.NewReader(m.body))
+
+	isMultipart := false
+	var mw *multipart.Writer
+	var pipeReader *io.PipeReader
+	var pipeWriter *io.PipeWriter
+	if m.multipartFiller != nil {
+		isMultipart = true
+		pipeReader, pipeWriter = io.Pipe()
+		mw = multipart.NewWriter(pipeWriter)
+		go func() {
+			defer pipeWriter.Close()
+			defer mw.Close()
+			m.multipartFiller(mw)
+		}()
+	}
+
+	req, err := http.NewRequest(m.method, gox.TValue(paramsStr == "", m.url, m.url+"?"+paramsStr).(string),
+		gox.TValue(isMultipart, pipeReader, bytes.NewReader(m.body)).(io.Reader))
 	if err != nil {
 		return m.responseContainer, 0, err
 	}
 	for k, v := range m.headers {
 		req.Header.Add(k, v)
 	}
+	if isMultipart {
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+	}
+
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return m.responseContainer, 0, err
