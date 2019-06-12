@@ -308,8 +308,8 @@ func (img *Image) Overlay(top *Image, pos image.Point, opacity float64) *Image {
 	return img
 }
 
-func (img *Image) AddWaterMark(watermark *Image, anchor imaging.Anchor, paddingX int, paddingY int, opacity float64) *Image {
-	pot := CalculatePt(img.src.Bounds().Size(), watermark.GetSource().Bounds().Size(), anchor, paddingX, paddingY)
+func (img *Image) AddWaterMark(watermark *Image, anchor imaging.Anchor, marginX int, marginY int, opacity float64) *Image {
+	pot := CalculatePt(img.src.Bounds().Size(), watermark.GetSource().Bounds().Size(), anchor, marginX, marginY)
 	// render watermark.
 	img.src = imaging.Overlay(img.src, watermark.src, pot, opacity)
 	return img
@@ -328,7 +328,11 @@ func (img *Image) Compress(quality int) *Image {
 	return img
 }
 
-func (img *Image) DrawText(content string, fc FontConfig, anchor imaging.Anchor, paddingX int, paddingY int) (*Image, error) {
+// DrawText draws text on the image.
+// anchor: text align,
+// marginX and marginY is the margin to nearest border, if the nearest border is not clear, such as imaging.Center,
+// marginX and marginY always reference to the left border or the top border.
+func (img *Image) DrawText(content string, fc FontConfig, anchor imaging.Anchor, marginX int, marginY int) (*Image, error) {
 	ctx := freetype.NewContext()
 	ctx = freetype.NewContext()
 	ctx.SetDPI(DefaultDPI)
@@ -358,7 +362,7 @@ func (img *Image) DrawText(content string, fc FontConfig, anchor imaging.Anchor,
 		offset = -m.Descent.Ceil() + m.Descent.Ceil()
 	}
 
-	pot := CalculatePt2(img.src.Bounds().Max, image.Point{0, 0}, anchor, paddingX, paddingY)
+	pot := CalculatePt2(img.src.Bounds().Max, image.Point{0, 0}, anchor, marginX, marginY)
 	_, err := ctx.DrawString(content, freetype.Pt(pot.X, pot.Y+offset))
 	if err != nil {
 		return img, err
@@ -382,52 +386,52 @@ func Overlay(background Image, img Image, pos image.Point, opacity float64) *Ima
 func CalculatePt(targetSize image.Point,
 	watermark image.Point,
 	anchor imaging.Anchor,
-	paddingX int, paddingY int) image.Point {
+	marginX int, marginY int) image.Point {
 	if anchor == imaging.Top {
 		return image.Point{
 			X: (targetSize.X - watermark.X) / 2,
-			Y: paddingY,
+			Y: marginY,
 		}
 	}
 	if anchor == imaging.TopLeft {
 		return image.Point{
-			X: paddingX,
-			Y: paddingY,
+			X: marginX,
+			Y: marginY,
 		}
 	}
 	if anchor == imaging.TopRight {
 		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
-			Y: paddingY,
+			X: (targetSize.X - watermark.X) - marginX,
+			Y: marginY,
 		}
 	}
 	if anchor == imaging.Bottom {
 		return image.Point{
 			X: (targetSize.X - watermark.X) / 2,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
+			Y: (targetSize.Y - watermark.Y) - marginY,
 		}
 	}
 	if anchor == imaging.BottomLeft {
 		return image.Point{
-			X: paddingX,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
+			X: marginX,
+			Y: (targetSize.Y - watermark.Y) - marginY,
 		}
 	}
 	if anchor == imaging.BottomRight {
 		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
+			X: (targetSize.X - watermark.X) - marginX,
+			Y: (targetSize.Y - watermark.Y) - marginY,
 		}
 	}
 	if anchor == imaging.Left {
 		return image.Point{
-			X: paddingX,
+			X: marginX,
 			Y: (targetSize.Y - watermark.Y) / 2,
 		}
 	}
 	if anchor == imaging.Right {
 		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
+			X: (targetSize.X - watermark.X) - marginX,
 			Y: (targetSize.Y - watermark.Y) / 2,
 		}
 	}
@@ -441,58 +445,58 @@ func CalculatePt(targetSize image.Point,
 func CalculatePt2(targetSize image.Point,
 	watermark image.Point,
 	anchor imaging.Anchor,
-	paddingX int, paddingY int) image.Point {
+	marginX int, marginY int) image.Point {
 	if anchor == imaging.Top {
 		return image.Point{
-			X: (targetSize.X-watermark.X)/2 + paddingX,
-			Y: paddingY,
+			X: (targetSize.X-watermark.X)/2 + marginX,
+			Y: marginY,
 		}
 	}
 	if anchor == imaging.TopLeft {
 		return image.Point{
-			X: paddingX,
-			Y: paddingY,
+			X: marginX,
+			Y: marginY,
 		}
 	}
 	if anchor == imaging.TopRight {
 		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
-			Y: paddingY,
+			X: (targetSize.X - watermark.X) - marginX,
+			Y: marginY,
 		}
 	}
 	if anchor == imaging.Bottom {
 		return image.Point{
-			X: (targetSize.X-watermark.X)/2 + paddingX,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
+			X: (targetSize.X-watermark.X)/2 + marginX,
+			Y: (targetSize.Y - watermark.Y) - marginY,
 		}
 	}
 	if anchor == imaging.BottomLeft {
 		return image.Point{
-			X: paddingX,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
+			X: marginX,
+			Y: (targetSize.Y - watermark.Y) - marginY,
 		}
 	}
 	if anchor == imaging.BottomRight {
 		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
-			Y: (targetSize.Y - watermark.Y) - paddingY,
+			X: (targetSize.X - watermark.X) - marginX,
+			Y: (targetSize.Y - watermark.Y) - marginY,
 		}
 	}
 	if anchor == imaging.Left {
 		return image.Point{
-			X: paddingX,
-			Y: (targetSize.Y-watermark.Y)/2 + paddingY,
+			X: marginX,
+			Y: (targetSize.Y-watermark.Y)/2 + marginY,
 		}
 	}
 	if anchor == imaging.Right {
 		return image.Point{
-			X: (targetSize.X - watermark.X) - paddingX,
-			Y: (targetSize.Y-watermark.Y)/2 + paddingY,
+			X: (targetSize.X - watermark.X) - marginX,
+			Y: (targetSize.Y-watermark.Y)/2 + marginY,
 		}
 	}
 	return image.Point{
-		X: (targetSize.X-watermark.X)/2 + paddingX,
-		Y: (targetSize.Y-watermark.Y)/2 + paddingY,
+		X: (targetSize.X-watermark.X)/2 + marginX,
+		Y: (targetSize.Y-watermark.Y)/2 + marginY,
 	}
 }
 

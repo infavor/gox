@@ -270,10 +270,9 @@ func TestImage_DrawText(t *testing.T) {
 
 	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
 	im.Blur(8)
-	_, err := im.DrawText("Hello", fc, imaging.BottomRight, 500, 300)
-	if err != nil {
-		log.Fatal(err)
-	}
+	im.DrawText("Hello", fc, imaging.BottomRight, 500, 700)
+	im.DrawText("From", fc, imaging.BottomRight, 500, 500)
+	im.DrawText("Other Side", fc, imaging.BottomRight, 1100, 300)
 	out, _ := file.CreateFile("E:\\test\\TestImage_DrawText.jpg")
 	img.Save(im, out, imaging.JPEG)
 
