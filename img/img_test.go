@@ -3,7 +3,7 @@ package img_test
 import (
 	"github.com/disintegration/imaging"
 	"github.com/hetianyi/gox/file"
-	"github.com/hetianyi/gox/font"
+	"github.com/hetianyi/gox/fontx"
 	"github.com/hetianyi/gox/img"
 	"github.com/hetianyi/gox/logger"
 	"image"
@@ -85,7 +85,7 @@ func TestImage_Invert(t *testing.T) {
 }
 
 func TestImage_Convolve3x3(t *testing.T) {
-	im, err := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
 		log.Panic(err)
 	}
@@ -94,7 +94,7 @@ func TestImage_Convolve3x3(t *testing.T) {
 }
 
 func TestImage_Convolve5x5(t *testing.T) {
-	im, err := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
 		log.Panic(err)
 	}
@@ -163,7 +163,7 @@ func TestImage_Rotate(t *testing.T) {
 }
 
 func TestImage_Transverse(t *testing.T) {
-	im, err := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	if err != nil {
 		log.Panic(err)
 	}
@@ -199,31 +199,31 @@ func TestImage_AddWaterMark(t *testing.T) {
 }
 
 func TestImage_Compress(t *testing.T) {
-	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im, _ := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	im.Compress(10)
 	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Compress.jpg")
 }
 
 func TestImage_Fit(t *testing.T) {
-	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im, _ := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	im.Fit(500, 500, imaging.Lanczos)
 	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Fit.jpg")
 }
 
 func TestImage_Fill(t *testing.T) {
-	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im, _ := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	im.Fill(500, 500, imaging.Center, imaging.Lanczos)
 	imaging.Save(im.GetSource(), "E:\\test\\TestImage_Fill.jpg")
 }
 
 func TestSaveToFile(t *testing.T) {
-	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im, _ := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	im.Blur(8)
 	img.SaveToFile(im, "E:\\test\\TestSaveToFile.jpg")
 }
 
 func TestSave(t *testing.T) {
-	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im, _ := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
 	im.Blur(8)
 
 	out, _ := file.CreateFile("E:\\test\\TestSave.jpg")
@@ -260,20 +260,21 @@ func addLabel(img *image.RGBA, x, y int, label string) {
 }*/
 
 func TestImage_DrawText(t *testing.T) {
-
-	f, _ := font.LoadFont("E:\\test1\\Inkfree.ttf")
-	fc := img.FontConfig{
-		Font:     f,
+	im, _ := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
+	fo, _ := fontx.LoadFont("E:\\test\\Inkfree.ttf")
+	fc := &fontx.FontConfig{
+		Font:     fo.Font,
 		FontSize: 200,
 		Color:    color.Black,
 	}
-
-	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
 	im.Blur(8)
-	im.DrawText("Hello", fc, imaging.BottomRight, 500, 700)
-	im.DrawText("From", fc, imaging.BottomRight, 500, 500)
-	im.DrawText("Other Side", fc, imaging.BottomRight, 1100, 300)
+	metrics := fo.GetMetrics(fc)
+	for {
+		im.DrawText("Hello", fc, metrics, imaging.BottomRight, 500, 700)
+		im.DrawText("From", fc, metrics, imaging.BottomRight, 500, 500)
+		im.DrawText("Other Side", fc, metrics, imaging.BottomRight, 1100, 300)
+	}
 	out, _ := file.CreateFile("E:\\test\\TestImage_DrawText.jpg")
-	img.Save(im, out, imaging.JPEG)
 
+	img.Save(im, out, imaging.JPEG)
 }

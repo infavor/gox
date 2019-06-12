@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"github.com/disintegration/imaging"
 	"github.com/golang/freetype"
-	"github.com/golang/freetype/truetype"
+	"github.com/hetianyi/gox/cache"
 	"github.com/hetianyi/gox/file"
+	"github.com/hetianyi/gox/fontx"
 	"golang.org/x/image/font"
 	"image"
 	"image/color"
 	"image/draw"
 	"image/jpeg"
 	"io"
+	"reflect"
 )
 
 const (
@@ -35,12 +37,6 @@ var (
 
 type Image struct {
 	src image.Image
-}
-
-type FontConfig struct {
-	Font     *truetype.Font
-	FontSize float64
-	Color    color.Color
 }
 
 // OpenLocalFile gets an Image using a local file.
@@ -329,30 +325,27 @@ func (img *Image) Compress(quality int) *Image {
 }
 
 // DrawText draws text on the image.
-// anchor: text align,
+// anchor is text align,
 // marginX and marginY is the margin to nearest border, if the nearest border is not clear, such as imaging.Center,
 // marginX and marginY always reference to the left border or the top border.
-func (img *Image) DrawText(content string, fc FontConfig, anchor imaging.Anchor, marginX int, marginY int) (*Image, error) {
-	ctx := freetype.NewContext()
-	ctx = freetype.NewContext()
-	ctx.SetDPI(DefaultDPI)
-	ctx.SetFont(fc.Font)
-	ctx.SetFontSize(fc.FontSize)
-	ctx.SetClip(img.src.Bounds())
+var ctx = freetype.NewContext()
 
-	overPaintImage := image.NewRGBA(img.src.Bounds())
-	draw.Draw(overPaintImage, img.src.Bounds(), img.src, image.ZP, draw.Over)
-	ctx.SetDst(overPaintImage)
-	ctx.SetSrc(image.NewUniform(fc.Color))
-	ctx.SetHinting(font.HintingNone)
+func (img *Image) DrawText(content string, fc *fontx.FontConfig, m font.Metrics, anchor imaging.Anchor, marginX int, marginY int) (*Image, error) {
+	ctx := cache.ApplyResource(reflect.TypeOf(ctx), func() interface{} {
+		ctx := freetype.NewContext()
+		ctx.SetDPI(DefaultDPI)
+		ctx.SetFont(fc.Font)
+		ctx.SetFontSize(fc.FontSize)
+		ctx.SetClip(img.src.Bounds())
+		//overPaintImage := image.NewRGBA(img.src.Bounds())
+		//draw.Draw(overPaintImage, img.src.Bounds(), img.src, image.ZP, draw.Over)
+		ctx.SetDst((img.src.(interface{})).(draw.Image))
+		ctx.SetSrc(image.NewUniform(fc.Color))
+		ctx.SetHinting(font.HintingNone)
+		return ctx
+	}).(*freetype.Context)
+	defer cache.ReCacheResource(ctx)
 
-	opt := truetype.Options{
-		Size:    fc.FontSize,
-		DPI:     DefaultDPI,
-		Hinting: font.HintingNone,
-	}
-	face := truetype.NewFace(fc.Font, &opt)
-	m := face.Metrics()
 	offset := 0
 	if anchor == imaging.Top || anchor == imaging.TopLeft {
 		offset = m.Ascent.Ceil() - m.Descent.Ceil()
@@ -367,7 +360,6 @@ func (img *Image) DrawText(content string, fc FontConfig, anchor imaging.Anchor,
 	if err != nil {
 		return img, err
 	}
-	img.src = overPaintImage
 	return img, nil
 }
 

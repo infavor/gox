@@ -12,7 +12,7 @@ var words = "HelloL你好"
 
 // https://stackoverflow.com/questions/27631736/meaning-of-top-ascent-baseline-descent-bottom-and-leading-in-androids-font
 func TestVCode_Generate1(t *testing.T) {
-	f, _ := font.LoadFont("E:\\test1\\Inkfree.ttf")
+	f, _ := fontx.LoadFont("E:\\test1\\Inkfree.ttf")
 	vc := &VCode{
 		Font:            f,
 		Size:            image.Rect(0, 0, 300, 150),
@@ -35,7 +35,7 @@ func TestVCode_Generate1(t *testing.T) {
 }
 
 func TestVCode_Generate2(t *testing.T) {
-	f, _ := font.LoadFont("E:\\test1\\SIMLI.TTF")
+	f, _ := fontx.LoadFont("E:\\test1\\SIMLI.TTF")
 	vc := &VCode{
 		Font:            f,
 		Size:            image.Rect(0, 0, 300, 150),
@@ -58,7 +58,7 @@ func TestVCode_Generate2(t *testing.T) {
 }
 
 func TestVCode_Generate3(t *testing.T) {
-	f, _ := font.LoadFont("E:\\test1\\STXINGKA.TTF")
+	f, _ := fontx.LoadFont("E:\\test1\\STXINGKA.TTF")
 	vc := &VCode{
 		Font:            f,
 		Size:            image.Rect(0, 0, 300, 150),
@@ -81,7 +81,7 @@ func TestVCode_Generate3(t *testing.T) {
 }
 
 func TestVCode_Generate4(t *testing.T) {
-	f, _ := font.LoadFont("E:\\test1\\BAUHS93.TTF")
+	f, _ := fontx.LoadFont("E:\\test1\\BAUHS93.TTF")
 	vc := &VCode{
 		Font:            f,
 		Size:            image.Rect(0, 0, 300, 150),
@@ -104,7 +104,7 @@ func TestVCode_Generate4(t *testing.T) {
 }
 
 func TestVCode_Generate5(t *testing.T) {
-	f, _ := font.LoadFont("E:\\test1\\Inkfree.ttf")
+	f, _ := fontx.LoadFont("E:\\test1\\Inkfree.ttf")
 	vc := &VCode{
 		Font:            f,
 		Size:            image.Rect(0, 0, 300, 150),

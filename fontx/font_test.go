@@ -1,4 +1,4 @@
-package font_test
+package fontx_test
 
 import (
 	"bufio"
