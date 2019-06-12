@@ -21,26 +21,24 @@ type VCode struct {
 	Colors          []color.Color
 	BackgroundColor color.Color
 	Size            image.Rectangle
-	ctx             *freetype.Context
 }
 
 func (v *VCode) Generate(content string, anchor imaging.Anchor, paddingX int, paddingY int) *image.RGBA {
-	defer func() { v.ctx = nil }()
 	target := img.NewRGBA(v.Size)
-	if v.ctx == nil {
-		v.ctx = freetype.NewContext()
-		v.ctx.SetDPI(DefaultDPI)
-		v.ctx.SetFont(v.Font)
-		v.ctx.SetFontSize(v.FontSize)
-		v.ctx.SetClip(v.Size)
-		v.ctx.SetDst(target) // 将freetype绑定到该画布
-		v.ctx.SetSrc(image.NewUniform(v.Colors[0]))
-		v.ctx.SetHinting(font.HintingNone)
-	}
+	ctx := freetype.NewContext()
+	ctx = freetype.NewContext()
+	ctx.SetDPI(DefaultDPI)
+	ctx.SetFont(v.Font)
+	ctx.SetFontSize(v.FontSize)
+	ctx.SetClip(v.Size)
+	ctx.SetDst(target) // 将freetype绑定到该画布
+	ctx.SetSrc(image.NewUniform(v.Colors[0]))
+	ctx.SetHinting(font.HintingNone)
 
 	opt := truetype.Options{
-		Size: v.FontSize,
-		DPI:  DefaultDPI,
+		Size:    v.FontSize,
+		DPI:     DefaultDPI,
+		Hinting: font.HintingNone,
 	}
 	face := truetype.NewFace(v.Font, &opt)
 	m := face.Metrics()
@@ -51,11 +49,20 @@ func (v *VCode) Generate(content string, anchor imaging.Anchor, paddingX int, pa
 		"Height: ", m.Height.Ceil(),
 	)
 
+	offset := 0
+	if anchor == imaging.Top || anchor == imaging.TopLeft {
+		offset = m.Ascent.Ceil() - m.Descent.Ceil()
+	} else if anchor == imaging.Left || anchor == imaging.Right || anchor == imaging.Center {
+		offset = (m.Ascent.Ceil() - m.Descent.Ceil()) / 2
+	} else if anchor == imaging.BottomLeft || anchor == imaging.Bottom || anchor == imaging.BottomRight {
+		offset = -m.Descent.Ceil() + m.Descent.Ceil()
+	}
+
 	pot := img.CalculatePt(v.Size.Max, image.Point{0, 0}, anchor, paddingX, paddingY)
-	fmt.Println(freetype.Pt(pot.X+int(v.FontSize), pot.Y))
-	_, err := v.ctx.DrawString(content, freetype.Pt(pot.X, pot.Y+(m.Ascent.Ceil()-m.Descent.Ceil())))
+	_, err := ctx.DrawString(content, freetype.Pt(pot.X, pot.Y+offset))
 	if err != nil {
 		return nil
 	}
+	ctx.DrawString("☻", freetype.Pt(pot.X, pot.Y+offset))
 	return target
 }

@@ -3,11 +3,19 @@ package img
 import (
 	"bytes"
 	"github.com/disintegration/imaging"
+	"github.com/golang/freetype"
+	"github.com/golang/freetype/truetype"
 	"github.com/hetianyi/gox/file"
+	"golang.org/x/image/font"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/jpeg"
 	"io"
+)
+
+const (
+	DefaultDPI = 72
 )
 
 var (
@@ -27,6 +35,12 @@ var (
 
 type Image struct {
 	src image.Image
+}
+
+type FontConfig struct {
+	Font     *truetype.Font
+	FontSize float64
+	Color    color.Color
 }
 
 // OpenLocalFile gets an Image using a local file.
@@ -314,6 +328,45 @@ func (img *Image) Compress(quality int) *Image {
 	return img
 }
 
+func (img *Image) DrawText(content string, fc FontConfig, anchor imaging.Anchor, paddingX int, paddingY int) (*Image, error) {
+	ctx := freetype.NewContext()
+	ctx = freetype.NewContext()
+	ctx.SetDPI(DefaultDPI)
+	ctx.SetFont(fc.Font)
+	ctx.SetFontSize(fc.FontSize)
+	ctx.SetClip(img.src.Bounds())
+
+	overPaintImage := image.NewRGBA(img.src.Bounds())
+	draw.Draw(overPaintImage, img.src.Bounds(), img.src, image.ZP, draw.Over)
+	ctx.SetDst(overPaintImage)
+	ctx.SetSrc(image.NewUniform(fc.Color))
+	ctx.SetHinting(font.HintingNone)
+
+	opt := truetype.Options{
+		Size:    fc.FontSize,
+		DPI:     DefaultDPI,
+		Hinting: font.HintingNone,
+	}
+	face := truetype.NewFace(fc.Font, &opt)
+	m := face.Metrics()
+	offset := 0
+	if anchor == imaging.Top || anchor == imaging.TopLeft {
+		offset = m.Ascent.Ceil() - m.Descent.Ceil()
+	} else if anchor == imaging.Left || anchor == imaging.Right || anchor == imaging.Center {
+		offset = (m.Ascent.Ceil() - m.Descent.Ceil()) / 2
+	} else if anchor == imaging.BottomLeft || anchor == imaging.Bottom || anchor == imaging.BottomRight {
+		offset = -m.Descent.Ceil() + m.Descent.Ceil()
+	}
+
+	pot := CalculatePt2(img.src.Bounds().Max, image.Point{0, 0}, anchor, paddingX, paddingY)
+	_, err := ctx.DrawString(content, freetype.Pt(pot.X, pot.Y+offset))
+	if err != nil {
+		return img, err
+	}
+	img.src = overPaintImage
+	return img, nil
+}
+
 // Paste pastes the img image to the background image at the specified position and returns the combined image.
 func Paste(background Image, img Image, pos image.Point) *Image {
 	return &Image{imaging.Paste(background.src, img.src, pos)}
@@ -325,6 +378,7 @@ func Overlay(background Image, img Image, pos image.Point, opacity float64) *Ima
 	return &Image{imaging.Overlay(background.src, img.src, pos, opacity)}
 }
 
+// CalculatePt calculates point according to the given point.
 func CalculatePt(targetSize image.Point,
 	watermark image.Point,
 	anchor imaging.Anchor,
@@ -383,6 +437,66 @@ func CalculatePt(targetSize image.Point,
 	}
 }
 
+// CalculatePt calculates point according to the given point.
+func CalculatePt2(targetSize image.Point,
+	watermark image.Point,
+	anchor imaging.Anchor,
+	paddingX int, paddingY int) image.Point {
+	if anchor == imaging.Top {
+		return image.Point{
+			X: (targetSize.X-watermark.X)/2 + paddingX,
+			Y: paddingY,
+		}
+	}
+	if anchor == imaging.TopLeft {
+		return image.Point{
+			X: paddingX,
+			Y: paddingY,
+		}
+	}
+	if anchor == imaging.TopRight {
+		return image.Point{
+			X: (targetSize.X - watermark.X) - paddingX,
+			Y: paddingY,
+		}
+	}
+	if anchor == imaging.Bottom {
+		return image.Point{
+			X: (targetSize.X-watermark.X)/2 + paddingX,
+			Y: (targetSize.Y - watermark.Y) - paddingY,
+		}
+	}
+	if anchor == imaging.BottomLeft {
+		return image.Point{
+			X: paddingX,
+			Y: (targetSize.Y - watermark.Y) - paddingY,
+		}
+	}
+	if anchor == imaging.BottomRight {
+		return image.Point{
+			X: (targetSize.X - watermark.X) - paddingX,
+			Y: (targetSize.Y - watermark.Y) - paddingY,
+		}
+	}
+	if anchor == imaging.Left {
+		return image.Point{
+			X: paddingX,
+			Y: (targetSize.Y-watermark.Y)/2 + paddingY,
+		}
+	}
+	if anchor == imaging.Right {
+		return image.Point{
+			X: (targetSize.X - watermark.X) - paddingX,
+			Y: (targetSize.Y-watermark.Y)/2 + paddingY,
+		}
+	}
+	return image.Point{
+		X: (targetSize.X-watermark.X)/2 + paddingX,
+		Y: (targetSize.Y-watermark.Y)/2 + paddingY,
+	}
+}
+
+// SaveToFile saves img.Image to file.
 func SaveToFile(img *Image, filename string, opts ...imaging.EncodeOption) error {
 	f, err := imaging.FormatFromFilename(filename)
 	if err != nil {
@@ -400,14 +514,17 @@ func SaveToFile(img *Image, filename string, opts ...imaging.EncodeOption) error
 	return err
 }
 
+// Save writes img.Image to a writer.
 func Save(img *Image, out io.Writer, format imaging.Format, opts ...imaging.EncodeOption) error {
 	return imaging.Encode(out, img.src, format, opts...)
 }
 
+// NewRGBA creates a new image.RGBA
 func NewRGBA(r image.Rectangle) *image.RGBA {
 	return image.NewRGBA(r)
 }
 
+// NewImage creates a new img.Image
 func NewImage(src image.Image) *Image {
 	return &Image{src}
 }

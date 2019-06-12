@@ -3,17 +3,18 @@ package img_test
 import (
 	"github.com/disintegration/imaging"
 	"github.com/hetianyi/gox/file"
+	"github.com/hetianyi/gox/font"
 	"github.com/hetianyi/gox/img"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/math/fixed"
+	"github.com/hetianyi/gox/logger"
 	"image"
 	"image/color"
-	"image/png"
 	"log"
-	"os"
 	"testing"
 )
+
+func init() {
+	logger.Init(nil)
+}
 
 func TestImage_Resize(t *testing.T) {
 	im, err := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
@@ -230,6 +231,7 @@ func TestSave(t *testing.T) {
 	img.Save(im, out, imaging.JPEG)
 }
 
+/*
 func TestText(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 300, 100))
 	addLabel(img, 20, 30, "Hello Go")
@@ -255,4 +257,24 @@ func addLabel(img *image.RGBA, x, y int, label string) {
 		Dot:  point,
 	}
 	d.DrawString(label)
+}*/
+
+func TestImage_DrawText(t *testing.T) {
+
+	f, _ := font.LoadFont("E:\\test1\\Inkfree.ttf")
+	fc := img.FontConfig{
+		Font:     f,
+		FontSize: 200,
+		Color:    color.Black,
+	}
+
+	im, _ := img.OpenLocalFile("E:\\test\\2.jpg") // 1900x1283
+	im.Blur(8)
+	_, err := im.DrawText("Hello", fc, imaging.BottomRight, 500, 300)
+	if err != nil {
+		log.Fatal(err)
+	}
+	out, _ := file.CreateFile("E:\\test\\TestImage_DrawText.jpg")
+	img.Save(im, out, imaging.JPEG)
+
 }
