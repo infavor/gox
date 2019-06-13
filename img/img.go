@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/disintegration/imaging"
 	"github.com/golang/freetype"
-	"github.com/hetianyi/gox/cache"
 	"github.com/hetianyi/gox/file"
 	"github.com/hetianyi/gox/fontx"
 	"golang.org/x/image/font"
@@ -13,7 +12,6 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"io"
-	"reflect"
 )
 
 const (
@@ -328,23 +326,31 @@ func (img *Image) Compress(quality int) *Image {
 // anchor is text align,
 // marginX and marginY is the margin to nearest border, if the nearest border is not clear, such as imaging.Center,
 // marginX and marginY always reference to the left border or the top border.
-var ctx = freetype.NewContext()
-
+// example:
+//  im, _ := img.OpenLocalFile("E:\\test\\1.jpg") // 1900x1283
+//	fo, _ := fontx.LoadFont("E:\\test\\Inkfree.ttf")
+//	fc := &fontx.FontConfig{
+//		Font:     fo.Font,
+//		FontSize: 200,
+//		Color:    color.Black,
+//	}
+//	metrics := fo.GetMetrics(fc)
+//	im.DrawText("Hello", fc, metrics, imaging.BottomRight, 500, 700)
+// 尝试在image上绘制文字。
+// 参数anchor是文字的对齐方式，marginX和marginY是文字的边距。
+// 例如，当anchor=imaging.BottomRight，此时marginX是距离底边的距离，marginY是距离有边框的距离。
+// 当anchor=imaging.BottomRight，此时marginX是距离底边的距离，marginY是距离有边框的距离。
 func (img *Image) DrawText(content string, fc *fontx.FontConfig, m font.Metrics, anchor imaging.Anchor, marginX int, marginY int) (*Image, error) {
-	ctx := cache.ApplyResource(reflect.TypeOf(ctx), func() interface{} {
-		ctx := freetype.NewContext()
-		ctx.SetDPI(DefaultDPI)
-		ctx.SetFont(fc.Font)
-		ctx.SetFontSize(fc.FontSize)
-		ctx.SetClip(img.src.Bounds())
-		//overPaintImage := image.NewRGBA(img.src.Bounds())
-		//draw.Draw(overPaintImage, img.src.Bounds(), img.src, image.ZP, draw.Over)
-		ctx.SetDst((img.src.(interface{})).(draw.Image))
-		ctx.SetSrc(image.NewUniform(fc.Color))
-		ctx.SetHinting(font.HintingNone)
-		return ctx
-	}).(*freetype.Context)
-	defer cache.ReCacheResource(ctx)
+	ctx := freetype.NewContext()
+	ctx.SetDPI(DefaultDPI)
+	ctx.SetFont(fc.Font)
+	ctx.SetFontSize(fc.FontSize)
+	ctx.SetClip(img.src.Bounds())
+	//overPaintImage := image.NewRGBA(img.src.Bounds())
+	//draw.Draw(overPaintImage, img.src.Bounds(), img.src, image.ZP, draw.Over)
+	ctx.SetDst((img.src.(interface{})).(draw.Image))
+	ctx.SetSrc(image.NewUniform(fc.Color))
+	ctx.SetHinting(font.HintingNone)
 
 	offset := 0
 	if anchor == imaging.Top || anchor == imaging.TopLeft {
