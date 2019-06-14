@@ -35,7 +35,7 @@ var (
 	defaultPattern = pattern{
 		title:  "",
 		left:   "[",
-		finish: "-",
+		finish: "=",
 		cur:    ">",
 		blank:  " ",
 		right:  "]",

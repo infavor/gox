@@ -3,11 +3,9 @@ package pg_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/hetianyi/gox/pg"
 	"math"
 	"os"
 	"testing"
-	"time"
 )
 
 func Test1(t *testing.T) {
@@ -29,13 +27,4 @@ func Test11(t *testing.T) {
 	}
 	bs := buffer.String()
 	fmt.Fprintf(os.Stdout, "\r%c%s%c%s%c", '[', fs, '>', bs, ']')
-}
-
-func Test2(t *testing.T) {
-	fmt.Println()
-	p := pg.New(100, 50)
-	for i := 0; i < 100; i++ {
-		p.Increase()
-		time.Sleep(time.Millisecond * 100)
-	}
 }
