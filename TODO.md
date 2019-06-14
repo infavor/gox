@@ -1,10 +1,13 @@
 - websocket √
 - resource fork
-- plugin
+- plugin √
 - socks
-- ipv4/ipv6
-- consul
-- feign-like
--- uuid √
+- ipv4/ipv6 √
+- consul √
+- feign-like √
+- uuid √
+- virtual file system
+- small file merge and organize
+- state mark and register(operations frequency etc.)
 
 - test package cache pointer/none-pointer

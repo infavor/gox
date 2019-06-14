@@ -56,6 +56,7 @@ func (pool *pool) Push(task func()) error {
 	return nil
 }
 
+// listOperation ensures operating on list.List is the only one place.
 func (pool *pool) listOperation(push bool, work func()) func() {
 	pool.listOperationLock.Lock()
 	defer pool.listOperationLock.Unlock()
