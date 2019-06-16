@@ -8,7 +8,6 @@ import (
 	"github.com/hetianyi/gox/logger"
 	"github.com/sirupsen/logrus"
 	"testing"
-	"time"
 )
 
 func init() {
@@ -37,24 +36,31 @@ func TestNewMap(t *testing.T) {
 
 func TestNewMap1(t *testing.T) {
 	m := hashmap.NewMap()
-	time.Sleep(time.Second * 5)
+	//time.Sleep(time.Second * 5)
 	logrus.Info("开始添加....")
 	for i := 0; i < 10000000; i++ {
 		m.Put(convert.IntToStr(i), i)
 	}
 	logrus.Info("结束添加....")
-	time.Sleep(time.Second * 10)
+	//time.Sleep(time.Second * 10)
 
 	logrus.Info("测试查找1....")
 	logrus.Info("1=", m.Get("1"))
 	logrus.Info("测试查找2....")
 	logrus.Info("2=", m.Get("2"))
 	logrus.Info("结束查找....")
-	time.Sleep(time.Second * 10)
+	//time.Sleep(time.Second * 10)
 }
 
 func TestNewMap2(t *testing.T) {
+	var a interface{} = 1
+	var b interface{} = "x"
+	fmt.Println(a == b)
+}
+
+func TestNewMap3(t *testing.T) {
 	m := hashmap.NewMap()
-	m.Put("123", "123")
-	m.Put("123", "123")
+	for i := 0; i < 150; i++ {
+		m.Put(convert.IntToStr(i), i)
+	}
 }
