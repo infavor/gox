@@ -101,7 +101,7 @@ func (w *LogWriter) Write(p []byte) (int, error) {
 		lastWriteTime = time.Now()
 	}()
 	if !write2File {
-		return os.Stdout.Write(p)
+		return os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, colorPattern.ReplaceAll(p, []byte(""))).([]byte))
 	}
 	now := time.Now()
 	triggerExchange(now)
@@ -111,7 +111,7 @@ func (w *LogWriter) Write(p []byte) (int, error) {
 		}
 		return curOut.Write(colorPattern.ReplaceAll(p, []byte("")))
 	}
-	return os.Stdout.Write(p)
+	return os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, colorPattern.ReplaceAll(p, []byte(""))).([]byte))
 }
 
 // Init initialize logrus logger.
