@@ -173,3 +173,8 @@ func tableSizeFor(cap int) int {
 	n |= n >> 16
 	return gox.TValue(n < 0, 1, gox.TValue(n >= 1073741824, 1073741824, n+1).(int)).(int)
 }
+
+func TestInit(t *testing.T) {
+	a := 1 | 7
+	fmt.Println(a | 3)
+}
