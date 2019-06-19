@@ -96,10 +96,10 @@ type Config struct {
 	RollingPolicy      []int
 }
 
-type LogWriter struct {
+type logWriter struct {
 }
 
-func (w *LogWriter) Write(p []byte) (int, error) {
+func (w *logWriter) Write(p []byte) (int, error) {
 	defer func() {
 		lastWriteTime = time.Now()
 
@@ -126,7 +126,7 @@ func (w *LogWriter) Write(p []byte) (int, error) {
 func Init(config *Config) {
 	lastWriteTime = time.Now()
 	if IsInitialized() {
-		log.Warn("logger has already initialized")
+		fmt.Println("logger has already initialized")
 		return
 	}
 	if config == nil {
@@ -159,7 +159,7 @@ func Init(config *Config) {
 
 	// Output to stdout instead of the default stderr
 	// Can be any io.Writer, see below for File example
-	log.SetOutput(&LogWriter{})
+	log.SetOutput(&logWriter{})
 
 	// Only log the warning severity or above.
 	var l = uint32(config.Level)

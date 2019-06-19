@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/ws"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"testing"
 	"time"
@@ -32,14 +31,14 @@ func TestHandle(t *testing.T) {
 
 func wsHandler(writer http.ResponseWriter, request *http.Request) {
 	err := ws.Handle(writer, request, func(messageType int, p []byte) (int, []byte, error) {
-		log.Info("recv: ", string(p))
+		logger.Info("recv: ", string(p))
 		if messageType == websocket.PingMessage {
 			return websocket.PongMessage, p, nil
 		}
 		return messageType, []byte("Got it!"), nil
 	})
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 	}
 }
 func htmlHandler(writer http.ResponseWriter, request *http.Request) {

@@ -3,7 +3,6 @@ package gox_test
 import (
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/logger"
-	"github.com/sirupsen/logrus"
 	"testing"
 )
 
@@ -12,5 +11,5 @@ func init() {
 }
 
 func TestNetwork(t *testing.T) {
-	logrus.Info(gox.GetMyAddress("vEthernet", "192.168.0"))
+	logger.Info(gox.GetMyAddress("vEthernet", "192.168.0"))
 }

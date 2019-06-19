@@ -8,7 +8,7 @@ import (
 	"container/list"
 	"errors"
 	"github.com/hetianyi/gox"
-	"github.com/sirupsen/logrus"
+	"github.com/hetianyi/gox/logger"
 	"sync"
 )
 
@@ -108,6 +108,6 @@ func (pool *pool) execute(task func()) {
 	gox.Try(func() {
 		task()
 	}, func(i interface{}) {
-		logrus.Error("error execute work:", i)
+		logger.Error("error execute work:", i)
 	})
 }

@@ -7,7 +7,7 @@ package conn
 import (
 	"container/list"
 	"errors"
-	"github.com/sirupsen/logrus"
+	"github.com/hetianyi/gox/logger"
 	"net"
 	"strconv"
 	"sync"
@@ -66,7 +66,7 @@ func (fac *ConnectionFactory) createConn() (*net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	logrus.Debug("create new connection:", &conn)
+	logger.Debug("create new connection:", &conn)
 	return &conn, nil
 }
 
@@ -130,7 +130,7 @@ func (p *pool) expireConnections() {
 			next = e.Next()
 			if p.registeredConnMap[c].Unix() <= now.Unix() {
 				p.connList.Remove(e)
-				logrus.Debug("expire connection:", &c)
+				logger.Debug("expire connection:", &c)
 				p.ReturnBrokenConnection(c)
 			}
 		}

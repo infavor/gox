@@ -4,14 +4,13 @@ import (
 	"github.com/hashicorp/consul/api"
 	"github.com/hetianyi/gox/consulx"
 	"github.com/hetianyi/gox/logger"
-	"github.com/sirupsen/logrus"
 	"testing"
 	"time"
 )
 
 func init() {
 	logger.Init(&logger.Config{
-		Level: logrus.TraceLevel,
+		Level: logger.TraceLevel,
 	})
 }
 
@@ -31,7 +30,7 @@ func TestConsulClient(t *testing.T) {
 		},
 	}
 	client.Run()
-	logrus.Info("consul set passed..................")
+	logger.Info("consul set passed..................")
 	wait := make(chan int)
 	<-wait
 }

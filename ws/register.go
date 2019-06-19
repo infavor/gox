@@ -3,7 +3,7 @@ package ws
 import (
 	"errors"
 	"github.com/gorilla/websocket"
-	log "github.com/sirupsen/logrus"
+	"github.com/hetianyi/gox/logger"
 	"net/http"
 )
 
@@ -19,10 +19,10 @@ func Handle(w http.ResponseWriter, r *http.Request, handler func(messageType int
 		return err
 	}
 	defer func() {
-		log.Debug("close websocket connection ", &c)
+		logger.Debug("close websocket connection ", &c)
 		c.Close()
 	}()
-	log.Debug("start a new websocket connection ", &c)
+	logger.Debug("start a new websocket connection ", &c)
 	for {
 		mt, message, err := c.ReadMessage()
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/hash/hashcode"
-	log "github.com/sirupsen/logrus"
+	"github.com/hetianyi/gox/logger"
 	"math"
 	"sync"
 )
@@ -66,7 +66,7 @@ func (m *hashMap) resize() {
 	if oldCap > 0 {
 		if oldCap >= MAXIMUM_CAPACITY {
 			m.threshold = math.MaxInt32
-			log.Trace("resize map finish")
+			logger.Trace("resize map finish")
 			return
 		}
 		if newCap = oldCap << 1; newCap < MAXIMUM_CAPACITY && oldCap >= DEFAULT_INITIAL_CAPACITY {
@@ -84,7 +84,7 @@ func (m *hashMap) resize() {
 	}
 	m.threshold = newThr
 
-	log.Trace("resize map, current capacity is ", len(m.table), ", new capacity is ", newCap, ", old size is ", m.size)
+	logger.Trace("resize map, current capacity is ", len(m.table), ", new capacity is ", newCap, ", old size is ", m.size)
 	newTab := make([]*node, newCap)
 	if m.table != nil {
 		for i := 0; i < len(m.table); i++ {
@@ -117,7 +117,7 @@ func (m *hashMap) resize() {
 		}
 	}
 	m.table = newTab
-	log.Trace("resize map finish")
+	logger.Trace("resize map finish")
 }
 
 func (m *hashMap) Put(key interface{}, value interface{}) interface{} {
@@ -138,7 +138,7 @@ func (m *hashMap) Put(key interface{}, value interface{}) interface{} {
 		n := m.table[i]
 		for n != nil {
 			if n.hashcode == h && n.value == value {
-				log.Trace("replace old value ", n.value, " to ", value)
+				logger.Trace("replace old value ", n.value, " to ", value)
 				oldVal := n.value
 				n.value = value
 				return oldVal

@@ -6,7 +6,6 @@ import (
 	"github.com/hetianyi/gox/img"
 	"github.com/hetianyi/gox/img/gifx"
 	"github.com/hetianyi/gox/logger"
-	log "github.com/sirupsen/logrus"
 	"image/gif"
 	"testing"
 )
@@ -19,24 +18,24 @@ func init() {
 func TestGIFWaterMark1(t *testing.T) {
 	g, err := gifx.LoadFromLocalFile("D:\\tmp\\4\\origin.gif")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	watermark, err := img.OpenLocalFile("D:\\tmp\\4\\mark1.png")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	watermark = watermark.Resize(50, 50, imaging.Lanczos)
 	g.AddWaterMark(watermark, imaging.BottomRight, 10, 10, 1)
 
 	of, err := file.CreateFile("D:\\tmp\\4\\origin_watermark.gif")
 	if err != nil {
-		log.Panic(err)
+		logger.Panic(err)
 	}
 	defer of.Close()
 
 	err = gif.EncodeAll(of, g.GetSource())
 	if err != nil {
-		log.Panic(err)
+		logger.Panic(err)
 	}
 }
 
@@ -48,24 +47,24 @@ func TestGenerate(t *testing.T) {
 	images[3], _ = img.OpenLocalFile("D:\\tmp\\5\\4.jpg")
 	g, err := gifx.Generate(images, []int{100, 100, 100, 100}, 0)
 	if err != nil {
-		log.Panic(err)
+		logger.Panic(err)
 	}
 	watermark, err := img.OpenLocalFile("D:\\tmp\\4\\mark1.png")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	watermark = watermark.Resize(50, 50, imaging.Lanczos)
 	g.AddWaterMark(watermark, imaging.BottomRight, 10, 10, 1)
 
 	of, err := file.CreateFile("D:\\tmp\\5\\merge.gif")
 	if err != nil {
-		log.Panic(err)
+		logger.Panic(err)
 	}
 	defer of.Close()
 
 	err = gif.EncodeAll(of, g.GetSource())
 	if err != nil {
-		log.Panic(err)
+		logger.Panic(err)
 	}
-	log.Info("merge success")
+	logger.Info("merge success")
 }

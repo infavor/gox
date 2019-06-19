@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hetianyi/gox/file"
 	"github.com/hetianyi/gox/logger"
-	"github.com/sirupsen/logrus"
 	"testing"
 )
 
@@ -15,12 +14,12 @@ func init() {
 func TestCreateEmptyFile(t *testing.T) {
 	fi, err := file.CreateFile("D:/tmp/placeholder.txt")
 	if err != nil {
-		logrus.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer fi.Close()
 	_, err = fi.Seek(1023, 0)
 	if err != nil {
-		logrus.Fatal(err)
+		logger.Fatal(err)
 	}
 	fi.Write([]byte("\x00"))
 	//206,905,344
@@ -29,7 +28,7 @@ func TestCreateEmptyFile(t *testing.T) {
 func TestCreateEmptyFile1(t *testing.T) {
 	fi, err := file.CreateFile("D:/tmp/placeholder.txt")
 	if err != nil {
-		logrus.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer fi.Close()
 	fmt.Println(fi.WriteAt([]byte{222}, 1023))
@@ -39,7 +38,7 @@ func TestCreateEmptyFile1(t *testing.T) {
 func TestCreateEmptyFile2(t *testing.T) {
 	fi, err := file.CreateFile("D:/tmp/placeholder.txt")
 	if err != nil {
-		logrus.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer fi.Close()
 	fmt.Println(fi.WriteAt([]byte{222}, 1024*1024*1024))

@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/consul/api"
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/httpx"
+	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/timer"
-	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -27,17 +27,17 @@ type ConsulClient struct {
 
 // checkServers checks all configured servers's status.
 func (client *ConsulClient) checkServers() int {
-	log.Debug("checking consul servers...")
+	logger.Debug("checking consul servers...")
 	failCount := 0
 	for _, s := range client.Servers {
 		gox.Try(func() {
 			failCount += checkServer(s)
 		}, func(i interface{}) {
 			failCount++
-			log.Error("error when checking server status:", i)
+			logger.Error("error when checking server status:", i)
 		})
 	}
-	log.Debug("server check sum, healthy servers ", len(client.Servers)-failCount, ", error servers: ", failCount)
+	logger.Debug("server check sum, healthy servers ", len(client.Servers)-failCount, ", error servers: ", failCount)
 	return failCount
 }
 
@@ -45,12 +45,12 @@ func (client *ConsulClient) checkServers() int {
 func (client *ConsulClient) Run() {
 	client.currentServerIndex = -1
 	if client.Servers == nil || len(client.Servers) == 0 {
-		log.Error("no server configured")
+		logger.Error("no server configured")
 		return
 	}
 	failCount := client.checkServers()
 	if failCount == len(client.Servers) {
-		log.Error("all consul server is unavailable!")
+		logger.Error("all consul server is unavailable!")
 	}
 	client.switchRegisterServer(true)
 
@@ -83,11 +83,11 @@ func (client *ConsulClient) switchRegisterServer(first bool) {
 	config := api.DefaultConfig()
 	config.Address = client.Servers[client.currentServerIndex]
 	if !first {
-		log.Warn("switch server to ", config.Address)
+		logger.Warn("switch server to ", config.Address)
 	}
 	c, err := api.NewClient(config)
 	if err != nil {
-		log.Error("server is not available: ", config.Address)
+		logger.Error("server is not available: ", config.Address)
 		return
 	}
 	client.currentApiClient = c
@@ -97,13 +97,13 @@ func (client *ConsulClient) switchRegisterServer(first bool) {
 func (client *ConsulClient) registerService() {
 	retry := 0
 	for {
-		log.Debug("register service...")
+		logger.Debug("register service...")
 		for client.currentApiClient == nil {
 			client.switchRegisterServer(false)
 		}
 		err := client.currentApiClient.Agent().ServiceRegister(client.Service)
 		if err != nil {
-			log.Error("error register service[ID:", client.Service.ID, ", Name:", client.Service.Name, "]: ", err)
+			logger.Error("error register service[ID:", client.Service.ID, ", Name:", client.Service.Name, "]: ", err)
 			time.Sleep(time.Second * 15)
 			retry++
 			if retry%3 == 0 {
@@ -111,27 +111,27 @@ func (client *ConsulClient) registerService() {
 			}
 			continue
 		}
-		log.Info("register service success: ", client.Service.Name)
+		logger.Info("register service success: ", client.Service.Name)
 		break
 	}
 	client.renewLock <- 0
 	if err := client.loadServices(); err != nil {
-		log.Error("error get services info: ", err)
+		logger.Error("error get services info: ", err)
 	}
 }
 
 func (client *ConsulClient) renew() {
 	<-client.renewLock
 	timer.Start(0, client.TTL/2, 0, func(t *timer.Timer) {
-		log.Debug("try to renew service: ", client.Service.Name)
+		logger.Debug("try to renew service: ", client.Service.Name)
 		err := client.currentApiClient.Agent().PassTTL("service:"+gox.TValue(client.Service.ID == "", client.Service.Name, client.Service.ID).(string), "")
 		if err != nil {
-			log.Error("error renew service: ", client.Service.Name)
+			logger.Error("error renew service: ", client.Service.Name)
 			t.Destroy()
 			client.registerService()
 			return
 		}
-		log.Debug("renew service[ID:", client.Service.ID, ", Name:", client.Service.Name, "] success")
+		logger.Debug("renew service[ID:", client.Service.ID, ", Name:", client.Service.Name, "] success")
 	})
 }
 
@@ -152,11 +152,11 @@ func checkServer(server string) int {
 	}
 	_, status, err := httpx.Mock().URL(server).Do()
 	if err != nil {
-		log.Warn(err)
+		logger.Warn(err)
 		return 1
 	}
 	if err != nil || status != 200 {
-		log.Warn("err server status: ", status, " while checking server ", server)
+		logger.Warn("err server status: ", status, " while checking server ", server)
 		return 1
 	}
 	return 0
