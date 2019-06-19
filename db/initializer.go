@@ -11,7 +11,7 @@ var (
 	managedDB   *gorm.DB
 )
 
-func Open(dialect string, args ...interface{}) error {
+func InitConnection(dialect string, args ...interface{}) error {
 	_driverName = dialect
 	_args = args
 	db, err := gorm.Open(dialect, args...)
@@ -40,5 +40,5 @@ func Reconnect() error {
 		managedDB.DB().Close()
 	}
 	managedDB = nil
-	return Open(_driverName, _args...)
+	return InitConnection(_driverName, _args...)
 }

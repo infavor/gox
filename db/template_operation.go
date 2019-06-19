@@ -7,13 +7,13 @@ import (
 )
 
 // Query does a db query.
-func Query(result interface{}, sql string, args ...interface{}) {
-
+func Query(work func(sql *gorm.DB) error) error {
+	return work(GetDB())
 }
 
+// Transaction does a db transaction.
 func Transaction(work func(tx *gorm.DB) error) error {
-	db := GetDB()
-	tx := db.Begin()
+	tx := GetDB().Begin()
 	gox.Try(func() {
 		err := work(tx)
 		if err != nil {
