@@ -15,3 +15,11 @@ func TestOnlyConsole(t *testing.T) {
 		logger.Info(i)
 	}
 }
+
+func TestSimpleTextFormatter_Format(t *testing.T) {
+	logger.Init(&logger.Config{
+		Level:     logger.InfoLevel,
+		Formatter: &logger.SimpleTextFormatter{},
+	})
+	logger.Info("Hello")
+}

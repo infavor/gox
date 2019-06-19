@@ -170,26 +170,6 @@ func IsInitialized() bool {
 	return initialized
 }
 
-// default text formatter.
-type DefaultTextFormatter struct {
-}
-
-// Format formats logs.
-func (f *DefaultTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	var b *bytes.Buffer
-	if entry.Buffer != nil {
-		b = entry.Buffer
-	} else {
-		b = &bytes.Buffer{}
-	}
-	b.WriteString(fmt.Sprintf("%-1s", changeLevelColor(strings.ToUpper(entry.Level.String())[0])))
-	b.WriteString(BrightCyan(gox.GetLongLongDateString(entry.Time)).String())
-	b.WriteString(getCaller())
-	b.WriteString(White(entry.Message).String())
-	b.WriteString("\n")
-	return b.Bytes(), nil
-}
-
 func getCaller() string {
 	_, file, line, success := runtime.Caller(8)
 	if success {
