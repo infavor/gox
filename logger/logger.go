@@ -175,9 +175,9 @@ func (f *DefaultTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		b = &bytes.Buffer{}
 	}
 	b.WriteString(fmt.Sprintf("%-1s", changeLevelColor(strings.ToUpper(entry.Level.String())[0])))
-	b.WriteString(Cyan(gox.GetLongLongDateString(entry.Time)).String())
+	b.WriteString(BrightCyan(gox.GetLongLongDateString(entry.Time)).String())
 	b.WriteString(getCaller())
-	b.WriteString(BrightBlue(entry.Message).String())
+	b.WriteString(White(entry.Message).String())
 	b.WriteString("\n")
 	return b.Bytes(), nil
 }
@@ -185,7 +185,7 @@ func (f *DefaultTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 func getCaller() string {
 	_, file, line, success := runtime.Caller(8)
 	if success {
-		return Magenta(strings.Join([]string{" [", file[strings.LastIndex(file, "/")+1:], ":", strconv.Itoa(line), "] "}, "")).String()
+		return BrightBlack(strings.Join([]string{" [", file[strings.LastIndex(file, "/")+1:], ":", strconv.Itoa(line), "] "}, "")).String()
 	}
 	return " [known] "
 }
@@ -198,10 +198,10 @@ func changeLevelColor(l uint8) string {
 		return BrightBlack(strings.Join([]string{"[", string(l), "] "}, "")).String()
 	}
 	if l == 'I' {
-		return Blue(strings.Join([]string{"[", string(l), "] "}, "")).String()
+		return BrightGreen(strings.Join([]string{"[", string(l), "] "}, "")).String()
 	}
 	if l == 'W' {
-		return Yellow(strings.Join([]string{"[", string(l), "] "}, "")).String()
+		return BrightYellow(strings.Join([]string{"[", string(l), "] "}, "")).String()
 	}
 	if l == 'E' {
 		return Red(strings.Join([]string{"[", string(l), "] "}, "")).String()

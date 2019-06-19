@@ -10,5 +10,14 @@ func main() {
 		RollingFileDir:     "/tmp",
 		RollingFileName:    "FUCK",
 	})
-	logger.Info("xxxxxxxxxxxx\n123123123")
+	// logger.Info("xxxxxxxxxxxx\n123123123")
+
+	logger.Trace("Hello world!")
+	logger.Debug("Hello world!")
+	logger.Info("Hello world!")
+	logger.Warn("Hello world!")
+	logger.Error("Hello world!")
+	//logger.Panic("Hello world!")
+	logger.Fatal("Hello world!")
+
 }
