@@ -171,9 +171,9 @@ func IsInitialized() bool {
 }
 
 func getCaller() string {
-	_, file, line, success := runtime.Caller(8)
+	_, file, line, success := runtime.Caller(9)
 	if success {
-		return BrightBlack(strings.Join([]string{" [", file[strings.LastIndex(file, "/")+1:], ":", strconv.Itoa(line), "] "}, "")).String()
+		return Yellow(strings.Join([]string{" [", file[strings.LastIndex(file, "/")+1:], ":", strconv.Itoa(line), "] "}, "")).String()
 	}
 	return " [known] "
 }

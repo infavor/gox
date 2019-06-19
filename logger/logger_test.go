@@ -8,7 +8,7 @@ import (
 func TestOnlyConsole(t *testing.T) {
 	logger.Init(&logger.Config{
 		Level:              logger.InfoLevel,
-		Write2File:         true,
+		Write2File:         false,
 		AlwaysWriteConsole: true,
 	})
 	for i := 0; i < 100; i++ {

@@ -8,6 +8,7 @@ import (
 	"reflect"
 )
 
+// HashCode returns the interface's hashcode.
 func HashCode(o interface{}) int32 {
 	if o == nil {
 		return 0

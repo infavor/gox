@@ -16,6 +16,11 @@ import (
 	"syscall"
 )
 
+// GetFileInfo gets the file information.
+func GetFileInfo(path string) (os.FileInfo, error) {
+	return os.Stat(path)
+}
+
 // GetFile opens file in readonly mode.
 func GetFile(path string) (*os.File, error) {
 	return os.Open(path)

@@ -9,13 +9,18 @@ const (
 	V4 Version = 4
 )
 
-// UUID return an uuid based on version.
-func UUID(version Version) string {
+// UUIDOf return an uuid based on version.
+func UUIDOf(version Version) string {
 	switch version {
 	case V1:
 		return uuid.NewV1().String()
 	case V4:
 		return uuid.NewV4().String()
 	}
+	return uuid.NewV4().String()
+}
+
+// UUID return an uuid of V4.
+func UUID() string {
 	return uuid.NewV4().String()
 }

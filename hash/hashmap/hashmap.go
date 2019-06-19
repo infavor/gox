@@ -120,6 +120,7 @@ func (m *hashMap) resize() {
 	logger.Trace("resize map finish")
 }
 
+// Put puts a key-value pair in this map.
 func (m *hashMap) Put(key interface{}, value interface{}) interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -159,6 +160,7 @@ func (m *hashMap) Put(key interface{}, value interface{}) interface{} {
 	return nil
 }
 
+// Get gets element by key.
 func (m *hashMap) Get(key interface{}) interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -181,6 +183,7 @@ func (m *hashMap) getIndex(key interface{}) (int, int32) {
 	return int((len(m.table) - 1) & int(h)), h
 }
 
+// Remove removes element of this map.
 func (m *hashMap) Remove(key interface{}) interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()
