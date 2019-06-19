@@ -5,7 +5,7 @@ import "github.com/hetianyi/gox/logger"
 func main() {
 	logger.Init(&logger.Config{
 		Level:              logger.InfoLevel,
-		Write2File:         false,
+		Write2File:         true,
 		AlwaysWriteConsole: true,
 		RollingFileDir:     "/tmp",
 		RollingFileName:    "FUCK",
@@ -17,7 +17,7 @@ func main() {
 	logger.Info("Hello world!")
 	logger.Warn("Hello world!")
 	logger.Error("Hello world!")
-	//logger.Panic("Hello world!")
-	logger.Fatal("Hello world!")
+	//logger.Fatal("Hello world!")
+	logger.Panic("Hello world!")
 
 }

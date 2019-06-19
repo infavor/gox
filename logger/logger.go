@@ -58,7 +58,7 @@ const (
 	MB512
 	MB1024
 
-	colorFlag = "\033\\[[0-9]+m"
+	colorFlag = "\033\\[([0-9]+;)?[0-9]+m"
 )
 
 var (
