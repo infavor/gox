@@ -7,6 +7,7 @@ import (
 	"github.com/hetianyi/gox/hash/hashmap"
 	"github.com/hetianyi/gox/logger"
 	"github.com/sirupsen/logrus"
+	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
@@ -177,4 +178,9 @@ func tableSizeFor(cap int) int {
 func TestInit(t *testing.T) {
 	a := 1 | 7
 	fmt.Println(a | 3)
+}
+
+func Test111(t *testing.T) {
+	fmt.Println(filepath.Base("D:/Hetianyi/svn/gox/logger/tes\\godfs-2019061911-part15.log"))
+	fmt.Println(filepath.Dir("godfs-2019061911-part15.log"))
 }

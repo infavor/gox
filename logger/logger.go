@@ -10,9 +10,11 @@ import (
 	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/file"
 	. "github.com/logrusorgru/aurora"
+	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -58,7 +60,8 @@ const (
 	MB512
 	MB1024
 
-	colorFlag = "\033\\[([0-9]+;)?[0-9]+m"
+	colorFlag  = "\033\\[([0-9]+;)?[0-9]+m"
+	archiveExt = ".tar.gz"
 )
 
 var (
@@ -99,19 +102,24 @@ type LogWriter struct {
 func (w *LogWriter) Write(p []byte) (int, error) {
 	defer func() {
 		lastWriteTime = time.Now()
+
+	}()
+	writeP := colorPattern.ReplaceAll(p, []byte(""))
+	defer func() {
+		curWriteLen += int64(len(writeP))
 	}()
 	if !write2File {
-		return os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, colorPattern.ReplaceAll(p, []byte(""))).([]byte))
+		return os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, writeP).([]byte))
 	}
 	now := time.Now()
 	triggerExchange(now)
 	if curOut != nil {
 		if alwaysWriteConsole {
-			os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, colorPattern.ReplaceAll(p, []byte(""))).([]byte))
+			os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, writeP).([]byte))
 		}
-		return curOut.Write(colorPattern.ReplaceAll(p, []byte("")))
+		return curOut.Write(writeP)
 	}
-	return os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, colorPattern.ReplaceAll(p, []byte(""))).([]byte))
+	return os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, writeP).([]byte))
 }
 
 // Init initialize logrus logger.
@@ -251,7 +259,6 @@ func triggerExchange(t time.Time) {
 		if !isChanged(t) {
 			return
 		}
-		fmt.Println("create log file...")
 	}
 
 	var buffer bytes.Buffer
@@ -277,28 +284,34 @@ func triggerExchange(t time.Time) {
 		}
 		if curOut != nil {
 			curOut.Close()
+			// 压缩历史日志
+			go compressOldFile(curOut.Name())
 		}
+		fmt.Println("create new log file:", newfile)
 		curWriteLen = 0
 		curOut = newOut
 		return
 	}
 	// 限制文件大小
 	index := 1
-	if file.Exists(newfile) {
+	for file.Exists(newfile) || file.Exists(newfile+archiveExt) {
 		buffer.Reset()
-		buffer.WriteString(newfile[0 : len(newfile)-gox.TValue(sizePolicy != 0, 9, 4).(int)])
+		buffer.WriteString(newfile[0:strings.LastIndex(newfile, "-")])
 		buffer.WriteString("-part")
 		buffer.WriteString(convert.IntToStr(index))
 		buffer.WriteString(".log")
 		newfile = buffer.String()
 		index++
 	}
-	newOut, err := file.CreateFile(newfile)
+	// fmt.Println("create new log file:", newfile)
+	newOut, err := file.AppendFile(newfile)
 	if err != nil {
 		return
 	}
 	if curOut != nil {
 		curOut.Close()
+		// 压缩历史日志
+		go compressOldFile(curOut.Name())
 	}
 	curWriteLen = 0
 	curOut = newOut
@@ -349,8 +362,20 @@ func isChanged(t time.Time) bool {
 	return changed
 }
 
-func FakeTime(t time.Time) {
-	lastWriteTime = t
+func compressOldFile(path string) {
+	// fmt.Println("压缩日志：", path)
+	fileName := filepath.Base(path) + archiveExt
+	dir := filepath.Dir(path)
+	gox.Try(func() {
+		err := archiver.Archive([]string{path}, dir+string(os.PathSeparator)+fileName)
+		if err != nil {
+			fmt.Println("err while compressing log file:", err)
+		} else {
+			file.Delete(path)
+		}
+	}, func(e interface{}) {
+		fmt.Println("err while compressing log file:", e)
+	})
 }
 
 func FakeWriteLen(len1 int64) {
