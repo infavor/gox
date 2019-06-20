@@ -18,7 +18,7 @@ func main() {
 
 	//go changeLength()
 	for true {
-		logger.Info(uuid.UUID(uuid.V4))
+		logger.Info(uuid.UUID())
 	}
 
 }

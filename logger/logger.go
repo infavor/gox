@@ -10,9 +10,10 @@ import (
 	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/file"
 	. "github.com/logrusorgru/aurora"
+	"github.com/mattn/go-colorable"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -97,6 +98,7 @@ type Config struct {
 }
 
 type logWriter struct {
+	colorableStdout io.Writer
 }
 
 func (w *logWriter) Write(p []byte) (int, error) {
@@ -109,17 +111,17 @@ func (w *logWriter) Write(p []byte) (int, error) {
 		curWriteLen += int64(len(writeP))
 	}()
 	if !write2File {
-		return os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, writeP).([]byte))
+		return w.colorableStdout.Write(gox.TValue(runtime.GOOS == "linux", p, p).([]byte))
 	}
 	now := time.Now()
 	triggerExchange(now)
 	if curOut != nil {
 		if alwaysWriteConsole {
-			os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, writeP).([]byte))
+			return w.colorableStdout.Write(gox.TValue(runtime.GOOS == "linux", p, p).([]byte))
 		}
 		return curOut.Write(writeP)
 	}
-	return os.Stdout.Write(gox.TValue(runtime.GOOS == "linux", p, writeP).([]byte))
+	return w.colorableStdout.Write(gox.TValue(runtime.GOOS == "linux", p, p).([]byte))
 }
 
 // Init initialize logrus logger.
@@ -155,15 +157,15 @@ func Init(config *Config) {
 	// Log as JSON instead of the default ASCII formatter.
 	// log.SetFormatter(&log.JSONFormatter{})
 	// log.SetFormatter(&log.TextFormatter{})
-	log.SetFormatter(gox.TValue(config.Formatter == nil, new(DefaultTextFormatter), config.Formatter).(log.Formatter))
+	logrus.SetFormatter(gox.TValue(config.Formatter == nil, new(DefaultTextFormatter), config.Formatter).(logrus.Formatter))
 
 	// Output to stdout instead of the default stderr
 	// Can be any io.Writer, see below for File example
-	log.SetOutput(&logWriter{})
+	logrus.SetOutput(&logWriter{colorable.NewColorableStdout()})
 
 	// Only log the warning severity or above.
 	var l = uint32(config.Level)
-	log.SetLevel(logrus.Level(l))
+	logrus.SetLevel(logrus.Level(l))
 }
 
 func IsInitialized() bool {
@@ -175,7 +177,7 @@ func getCaller() string {
 	if success {
 		return Yellow(strings.Join([]string{" [", file[strings.LastIndex(file, "/")+1:], ":", strconv.Itoa(line), "] "}, "")).String()
 	}
-	return " [known] "
+	return " [unknown] "
 }
 
 func changeLevelColor(l uint8) string {
@@ -201,31 +203,31 @@ func changeLevelColor(l uint8) string {
 }
 
 func Trace(args ...interface{}) {
-	log.Trace(args...)
+	logrus.Trace(args...)
 }
 
 func Debug(args ...interface{}) {
-	log.Debug(args...)
+	logrus.Debug(args...)
 }
 
 func Info(args ...interface{}) {
-	log.Info(args...)
+	logrus.Info(args...)
 }
 
 func Warn(args ...interface{}) {
-	log.Warn(args...)
+	logrus.Warn(args...)
 }
 
 func Error(args ...interface{}) {
-	log.Error(args...)
+	logrus.Error(args...)
 }
 
 func Fatal(args ...interface{}) {
-	log.Fatal(args...)
+	logrus.Fatal(args...)
 }
 
 func Panic(args ...interface{}) {
-	log.Panic(args...)
+	logrus.Panic(args...)
 }
 
 func triggerExchange(t time.Time) {

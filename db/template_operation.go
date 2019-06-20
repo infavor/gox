@@ -14,8 +14,9 @@ func Query(work func(sql *gorm.DB) error) error {
 // Transaction does a db transaction.
 func Transaction(work func(tx *gorm.DB) error) error {
 	tx := GetDB().Begin()
+	var err error
 	gox.Try(func() {
-		err := work(tx)
+		err = work(tx)
 		if err != nil {
 			if r := tx.Rollback(); r.Error != nil {
 				logger.Error("roll back transaction failed: ", r.Error)
@@ -24,12 +25,14 @@ func Transaction(work func(tx *gorm.DB) error) error {
 		}
 		if r := tx.Commit(); r.Error != nil {
 			logger.Error("commit transaction failed: ", r.Error)
+			err = r.Error
 		}
 	}, func(e interface{}) {
 		logger.Error("transaction error: ", e)
 		if r := tx.Rollback(); r.Error != nil {
 			logger.Error("roll back transaction failed: ", r.Error)
 		}
+		err = e.(error)
 	})
-	return nil
+	return err
 }
