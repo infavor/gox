@@ -17,21 +17,25 @@ import (
 type Article struct {
 	Id    int    `gorm:"column:id"`
 	Title string `gorm:"column:ma_title"`
+	Md5   string `gorm:"column:md5"`
 }
 
 func init() {
 	logger.Init(nil)
 	db.RegisterSQL("query1", `select id, ma_title from article where id=?`)
+	db.RegisterSQL("query2", `select id, md5 from file where id=?`)
 }
 
 var total = 0
 
 func TestMySQL(t *testing.T) {
 	driverName := "mysql"
-	connectString := "root:123456@tcp(127.0.0.1:3306)/mao"
+	connectString := "root:123456@tcp(192.168.25.1:3306)/mao"
 	if err := db.InitConnection(driverName, connectString); err != nil {
 		logger.Fatal(err)
 	}
+	db.SetConfig(8, 200, time.Hour*12)
+
 	timer.Start(0, 0, time.Second, func(t *timer.Timer) {
 		fmt.Println(convert.IntToStr(total) + "/s")
 		total = 0
@@ -51,6 +55,41 @@ func TestMySQL(t *testing.T) {
 					return err
 				}
 				// logger.Info(fmt.Sprintf("id: %d, title: %s", a.Id, a.Title))
+			}
+			return nil
+		})
+		if err != nil {
+			logger.Error(err)
+		}
+		total++
+	}
+}
+
+func TestSQLite(t *testing.T) {
+	driverName := "sqlite3"
+	connectString := "/home/hehety/repos/gox/storage.db?cache=shared&_synchronous=0"
+	if err := db.InitConnection(driverName, connectString); err != nil {
+		logger.Fatal(err)
+	}
+	timer.Start(0, 0, time.Second, func(t *timer.Timer) {
+		fmt.Println(convert.IntToStr(total) + "/s")
+		total = 0
+	})
+
+	for true {
+		err := db.Query(func(sql *gorm.DB) error {
+			rows, err := sql.Raw(db.GetSQL("query2"), 1).Rows()
+			if err != nil {
+				return err
+			}
+			defer rows.Close()
+			for rows.Next() {
+				a := &Article{}
+				err := sql.ScanRows(rows, a)
+				if err != nil {
+					return err
+				}
+				//logger.Info(fmt.Sprintf("id: %d, md5: %s", a.Id, a.Md5))
 			}
 			return nil
 		})
