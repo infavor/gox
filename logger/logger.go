@@ -77,8 +77,9 @@ var (
 	curOut             *os.File
 	lock               *sync.Mutex
 
-	timePolicy = HOUR
-	sizePolicy = 0
+	timePolicy       = HOUR
+	sizePolicy       = 0
+	logLevel   Level = PanicLevel
 
 	colorPattern = regexp.MustCompile(colorFlag)
 )
@@ -87,6 +88,7 @@ func init() {
 	lock = new(sync.Mutex)
 }
 
+// Config is config for initializing logger.
 type Config struct {
 	Formatter          logrus.Formatter
 	Level              Level
@@ -153,6 +155,7 @@ func Init(config *Config) {
 	rollingPolicy = config.RollingPolicy
 	alwaysWriteConsole = config.AlwaysWriteConsole
 	parsePolicy()
+	logLevel = config.Level
 	initialized = true
 	// Log as JSON instead of the default ASCII formatter.
 	// log.SetFormatter(&log.JSONFormatter{})
@@ -168,6 +171,7 @@ func Init(config *Config) {
 	logrus.SetLevel(logrus.Level(l))
 }
 
+// IsInitialized return if logger was initialized before.
 func IsInitialized() bool {
 	return initialized
 }
@@ -202,32 +206,43 @@ func changeLevelColor(l uint8) string {
 	return strings.Join([]string{"[", string(l), "] "}, "")
 }
 
+// Trace log.
 func Trace(args ...interface{}) {
 	logrus.Trace(args...)
 }
 
+// Debug log.
 func Debug(args ...interface{}) {
 	logrus.Debug(args...)
 }
 
+// Info log.
 func Info(args ...interface{}) {
 	logrus.Info(args...)
 }
 
+// Warn log.
 func Warn(args ...interface{}) {
 	logrus.Warn(args...)
 }
 
+// Error log.
 func Error(args ...interface{}) {
 	logrus.Error(args...)
 }
 
+// Fatal log.
 func Fatal(args ...interface{}) {
 	logrus.Fatal(args...)
 }
 
+// Panic log.
 func Panic(args ...interface{}) {
 	logrus.Panic(args...)
+}
+
+func GetLogLevel() Level {
+	return logLevel
 }
 
 func triggerExchange(t time.Time) {
@@ -360,6 +375,7 @@ func compressOldFile(path string) {
 	})
 }
 
+// FakeWriteLen for test.
 func FakeWriteLen(len1 int64) {
 	curWriteLen = len1
 }

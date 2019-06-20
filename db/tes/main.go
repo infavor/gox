@@ -20,7 +20,7 @@ type Article1 struct {
 
 func main() {
 	driverName := "mysql"
-	connectString := "root:123456@tcp(127.0.0.1:3306)/mao"
+	connectString := "root:123456@tcp(192.168.1.142:3306)/mao"
 	if err := db.InitConnection(driverName, connectString); err != nil {
 		logger.Fatal(err)
 	}
