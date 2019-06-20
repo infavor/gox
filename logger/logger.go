@@ -111,17 +111,17 @@ func (w *logWriter) Write(p []byte) (int, error) {
 		curWriteLen += int64(len(writeP))
 	}()
 	if !write2File {
-		return w.colorableStdout.Write(gox.TValue(runtime.GOOS == "linux", p, p).([]byte))
+		return w.colorableStdout.Write(p)
 	}
 	now := time.Now()
 	triggerExchange(now)
 	if curOut != nil {
 		if alwaysWriteConsole {
-			return w.colorableStdout.Write(gox.TValue(runtime.GOOS == "linux", p, p).([]byte))
+			return w.colorableStdout.Write(p)
 		}
 		return curOut.Write(writeP)
 	}
-	return w.colorableStdout.Write(gox.TValue(runtime.GOOS == "linux", p, p).([]byte))
+	return w.colorableStdout.Write(p)
 }
 
 // Init initialize logrus logger.
