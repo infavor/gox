@@ -60,9 +60,9 @@ const (
 	MB256
 	MB512
 	MB1024
-
-	colorFlag  = "\033\\[([0-9]+;)?[0-9]+m"
-	archiveExt = ".tar.gz"
+	SIZE_NO_LIMIT = 0
+	colorFlag     = "\033\\[([0-9]+;)?[0-9]+m"
+	archiveExt    = ".tar.gz"
 )
 
 var (
@@ -76,10 +76,9 @@ var (
 	LogFileName        string
 	curOut             *os.File
 	lock               *sync.Mutex
-
-	timePolicy       = HOUR
-	sizePolicy       = 0
-	logLevel   Level = PanicLevel
+	timePolicy         = HOUR
+	sizePolicy         = SIZE_NO_LIMIT
+	logLevel           = PanicLevel
 
 	colorPattern = regexp.MustCompile(colorFlag)
 )
@@ -246,7 +245,6 @@ func GetLogLevel() Level {
 }
 
 func triggerExchange(t time.Time) {
-
 	if curOut != nil {
 		if !isChanged(t) {
 			return
@@ -257,7 +255,6 @@ func triggerExchange(t time.Time) {
 			return
 		}
 	}
-
 	var buffer bytes.Buffer
 	buffer.WriteString(logDirectory)
 	buffer.WriteString(string(os.PathSeparator))
@@ -268,13 +265,13 @@ func triggerExchange(t time.Time) {
 		buffer.WriteString(gox.TValue(t.Hour() < 10, "0", "").(string))
 		buffer.WriteString(convert.IntToStr(t.Hour()))
 	}
-	if sizePolicy != 0 {
+	if sizePolicy != SIZE_NO_LIMIT {
 		buffer.WriteString("-part1")
 	}
 	buffer.WriteString(".log")
 	newfile := buffer.String()
 	// 不限制文件大小，则一定是日期变化
-	if sizePolicy == 0 {
+	if sizePolicy == SIZE_NO_LIMIT {
 		newOut, err := file.AppendFile(newfile)
 		if err != nil {
 			return
