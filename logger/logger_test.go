@@ -2,6 +2,7 @@ package logger_test
 
 import (
 	"github.com/hetianyi/gox/logger"
+	"github.com/logrusorgru/aurora"
 	"testing"
 )
 
@@ -22,4 +23,8 @@ func TestSimpleTextFormatter_Format(t *testing.T) {
 		Formatter: &logger.SimpleTextFormatter{},
 	})
 	logger.Info("Hello")
+}
+
+func TestPrintColor(t *testing.T) {
+	logger.PrintColor([]byte(aurora.Cyan("Hello").String()))
 }

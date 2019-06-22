@@ -81,10 +81,12 @@ var (
 	logLevel           = PanicLevel
 
 	colorPattern = regexp.MustCompile(colorFlag)
+	colorWriter  io.Writer
 )
 
 func init() {
 	lock = new(sync.Mutex)
+	colorWriter = colorable.NewColorableStdout()
 }
 
 // Config is config for initializing logger.
@@ -99,7 +101,6 @@ type Config struct {
 }
 
 type logWriter struct {
-	colorableStdout io.Writer
 }
 
 func (w *logWriter) Write(p []byte) (int, error) {
@@ -112,17 +113,17 @@ func (w *logWriter) Write(p []byte) (int, error) {
 		curWriteLen += int64(len(writeP))
 	}()
 	if !write2File {
-		return w.colorableStdout.Write(p)
+		return colorWriter.Write(p)
 	}
 	now := time.Now()
 	triggerExchange(now)
 	if curOut != nil {
 		if alwaysWriteConsole {
-			return w.colorableStdout.Write(p)
+			return colorWriter.Write(p)
 		}
 		return curOut.Write(writeP)
 	}
-	return w.colorableStdout.Write(p)
+	return colorWriter.Write(p)
 }
 
 // Init initialize logrus logger.
@@ -163,7 +164,7 @@ func Init(config *Config) {
 
 	// Output to stdout instead of the default stderr
 	// Can be any io.Writer, see below for File example
-	logrus.SetOutput(&logWriter{colorable.NewColorableStdout()})
+	logrus.SetOutput(&logWriter{})
 
 	// Only log the warning severity or above.
 	var l = uint32(config.Level)
@@ -370,6 +371,11 @@ func compressOldFile(path string) {
 	}, func(e interface{}) {
 		fmt.Println("err while compressing log file:", e)
 	})
+}
+
+// PrintColor pints colorable output to console.
+func PrintColor(p []byte) {
+	colorWriter.Write(p)
 }
 
 // FakeWriteLen for test.
