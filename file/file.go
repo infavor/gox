@@ -7,6 +7,7 @@ package file
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"hash/crc32"
 	"io"
 	"io/ioutil"
 	"os"
@@ -250,4 +251,39 @@ func FixPath(input string) string {
 // ListFiles reads the directory named by dirname and returns a list of directory entries sorted by filename.
 func ListFiles(path string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(path)
+}
+
+// Crc32 returns file's crc32 string.
+func Crc32(src string) (string, error) {
+	//Initialize an empty return string now in case an error has to be returned
+	var cRC32String string
+
+	//Open the fhe file located at the given path and check for errors
+	file, err := GetFile(src)
+	if err != nil {
+		return cRC32String, err
+	}
+
+	//Tell the program to close the file when the function returns
+	defer file.Close()
+
+	//Create the table with the given polynomial
+	tablePolynomial := crc32.MakeTable(crc32.IEEE)
+
+	//Open a new hash interface to write the file to
+	hash := crc32.New(tablePolynomial)
+
+	//Copy the file in the interface
+	if _, err := io.Copy(hash, file); err != nil {
+		return cRC32String, err
+	}
+
+	//Generate the hash
+	hashInBytes := hash.Sum(nil)[:]
+
+	//Encode the hash to a string
+	cRC32String = hex.EncodeToString(hashInBytes)
+
+	//Return the output
+	return cRC32String, nil
 }

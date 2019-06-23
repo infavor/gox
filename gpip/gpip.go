@@ -91,9 +91,9 @@ func (pip *Pip) Receive(
 		return err
 	}
 	if bodyLen > 0 {
-		handler(headerObject, io.LimitReader(pip.Conn, bodyLen), bodyLen)
+		return handler(headerObject, io.LimitReader(pip.Conn, bodyLen), bodyLen)
 	} else {
-		handler(headerObject, nil, 0)
+		return handler(headerObject, nil, 0)
 	}
 	return nil
 }
