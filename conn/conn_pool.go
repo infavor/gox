@@ -16,8 +16,8 @@ import (
 
 // pool is a connection pool.
 type pool struct {
-	maxSize     int
-	currentSize int
+	maxSize     uint
+	currentSize uint
 	connList    *list.List
 	listLock    *sync.Mutex
 	// registeredConnMap stores the connection's max idle deadline
@@ -39,7 +39,7 @@ type Server struct {
 }
 
 // NewPool creates a connection pool.
-func NewPool(size int, connFactory *ConnectionFactory) *pool {
+func NewPool(size uint, connFactory *ConnectionFactory) *pool {
 	if size <= 0 {
 		panic(errors.New("size must be a positive number"))
 	}

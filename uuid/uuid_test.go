@@ -7,6 +7,6 @@ import (
 )
 
 func TestUUID(t *testing.T) {
-	fmt.Println(uuid.UUID(uuid.V1))
-	fmt.Println(uuid.UUID(uuid.V4))
+	fmt.Println(uuid.UUID())
+	fmt.Println(uuid.UUID())
 }

@@ -9,19 +9,19 @@ var (
 	// manager manages connection pools for many servers.
 	poolManager map[string]*pool
 	// config is a settings which stores each server's max connection size.
-	config map[string]int
+	config map[string]uint
 	// default max connection size.
-	defaultMaxConn         = 50
-	defaultMaxConnIdleTime = time.Minute * 5
+	defaultMaxConn         uint = 50
+	defaultMaxConnIdleTime      = time.Minute * 5
 )
 
 func init() {
 	poolManager = make(map[string]*pool)
-	config = make(map[string]int)
+	config = make(map[string]uint)
 }
 
 // SetDefaultMaxConnSize sets default max connection size.
-func SetDefaultMaxConnSize(maxConn int) {
+func SetDefaultMaxConnSize(maxConn uint) {
 	defaultMaxConn = maxConn
 }
 
@@ -32,7 +32,7 @@ func SetDefaultMaxConnIdleTime(connMaxIdleTime time.Duration) {
 
 // InitServerSettings initializes settings of a server.
 // It is better way that initialize a server settings before getting connections from it's pool.
-func InitServerSettings(server *Server, maxConn int, connMaxIdleTime time.Duration) {
+func InitServerSettings(server *Server, maxConn uint, connMaxIdleTime time.Duration) {
 	s := server.GetConnectionString()
 	config[s] = maxConn
 	if poolManager[s] == nil {
