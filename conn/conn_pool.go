@@ -122,6 +122,12 @@ func (s *Server) GetConnectionString() string {
 	return s.Host + ":" + strconv.Itoa(s.Port)
 }
 
+func (p *pool) updateCurSize(value uint) {
+	p.listLock.Lock()
+	defer p.listLock.Unlock()
+	p.currentSize += value
+}
+
 // ReturnBrokenConnection returns a broken connection.
 func (p *pool) expireConnections() {
 	timer.Start(0, p.connFactory.ConnMaxIdleTime, 0, func(t *timer.Timer) {
@@ -131,6 +137,7 @@ func (p *pool) expireConnections() {
 			c := e.Value.(*net.Conn)
 			next = e.Next()
 			if p.registeredConnMap[c].Unix() <= now.Unix() {
+				p.updateCurSize(-1)
 				p.connList.Remove(e)
 				delete(p.registeredConnMap, c)
 				delete(p.registeredConnAttrMap, c)

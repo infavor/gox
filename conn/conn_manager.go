@@ -6,13 +6,10 @@ import (
 )
 
 var (
-	// manager manages connection pools for many servers.
-	poolManager map[string]*pool
-	// config is a settings which stores each server's max connection size.
-	config map[string]uint
-	// default max connection size.
-	defaultMaxConn         uint = 50
-	defaultMaxConnIdleTime      = time.Minute * 5
+	poolManager            map[string]*pool      // manager manages connection pools for many servers.
+	config                 map[string]uint       // config is a settings which stores each server's max connection size.
+	defaultMaxConn         uint             = 50 // default max connection size.
+	defaultMaxConnIdleTime                  = time.Minute * 5
 )
 
 func init() {
