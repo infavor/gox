@@ -7,6 +7,8 @@ package conn
 import (
 	"container/list"
 	"errors"
+	"fmt"
+	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/timer"
 	"net"
@@ -95,9 +97,7 @@ func (p *pool) GetConnection() (*net.Conn, interface{}, error) {
 // ReturnConnection returns a healthy connection
 func (p *pool) ReturnConnection(c *net.Conn, attr interface{}) {
 	p.listLock.Lock()
-	defer func() {
-		p.listLock.Unlock()
-	}()
+	defer p.listLock.Unlock()
 	if c != nil {
 		p.registeredConnMap[c] = time.Now().Add(p.connFactory.ConnMaxIdleTime)
 		p.registeredConnAttrMap[c] = attr
@@ -125,19 +125,27 @@ func (s *Server) GetConnectionString() string {
 // ReturnBrokenConnection returns a broken connection.
 func (p *pool) expireConnections() {
 	timer.Start(0, p.connFactory.ConnMaxIdleTime, 0, func(t *timer.Timer) {
-		logger.Debug("check connection expiration")
+		logger.Debug("check connection expiration", "当前总数：", p.connList.Len())
 		now := time.Now()
 		var next *list.Element
-		for e := p.connList.Front(); e != nil; e = next {
-			c := e.Value.(*net.Conn)
-			next = e.Next()
-			if p.registeredConnMap[c].Unix() <= now.Unix() {
-				p.connList.Remove(e)
-				delete(p.registeredConnMap, c)
-				delete(p.registeredConnAttrMap, c)
-				logger.Debug("expire connection:", &c)
-				p.ReturnBrokenConnection(c)
+		p.listLock.Lock()
+		gox.Try(func() {
+			for e := p.connList.Front(); e != nil; e = next {
+				c := e.Value.(*net.Conn)
+				next = e.Next()
+				if p.registeredConnMap[c].Unix() <= now.Unix() {
+					p.connList.Remove(e)
+					delete(p.registeredConnMap, c)
+					delete(p.registeredConnAttrMap, c)
+					logger.Debug("expire connection:", &c)
+					p.currentSize--
+					if c != nil {
+						(*c).Close()
+					}
+					fmt.Println("当前size", p.currentSize)
+				}
 			}
-		}
+		}, func(e interface{}) {})
+		p.listLock.Unlock()
 	})
 }

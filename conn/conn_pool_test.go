@@ -3,6 +3,7 @@ package conn_test
 import (
 	"container/list"
 	"encoding/json"
+	"fmt"
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/conn"
 	"github.com/hetianyi/gox/gpip"
@@ -51,13 +52,13 @@ func TestClient(t *testing.T) {
 		Host: "127.0.0.1",
 		Port: 8899,
 	}
-	conn.InitServerSettings(server, 1000, time.Second*2)
+	conn.InitServerSettings(server, 1000, time.Second*5)
 
 	cache := list.New()
 
 	// TODO bug fix error: connection pool is full
 	for i := 0; i < 10000000; i++ {
-		if i > 0 && i%1000 == 0 {
+		if i > 0 && i%500 == 0 {
 			gox.WalkList(cache, func(item interface{}) bool {
 				conn.ReturnConnection(server, item.(*net.Conn),
 					"01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd01092391231231231023sdkasdasdaksdkasjdajsdjasdjalsjdlasjdljalsd",
@@ -65,13 +66,45 @@ func TestClient(t *testing.T) {
 				return false
 			})
 			cache = list.New()
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second * 7)
 		}
 		c, _, err := conn.GetConnection(server)
 		if err != nil {
 			logger.Error("error: ", err)
 		}
 		cache.PushBack(c)
+	}
+}
+
+func TestAttr(t *testing.T) {
+	server := &conn.Server{
+		Host: "127.0.0.1",
+		Port: 8899,
+	}
+	conn.InitServerSettings(server, 1000, time.Second*5)
+
+	cache := list.New()
+
+	// TODO bug fix error: connection pool is full
+	for i := 1; i <= 100; i++ {
+		if i > 0 && i%100 == 0 {
+			gox.WalkList(cache, func(item interface{}) bool {
+				conn.ReturnConnection(server, item.(*net.Conn),
+					"123",
+					false)
+				return false
+			})
+			cache = list.New()
+		}
+		c, _, err := conn.GetConnection(server)
+		if err != nil {
+			logger.Error("error: ", err)
+		}
+		cache.PushBack(c)
+	}
+	for i := 0; i < 100; i++ {
+		_, a, _ := conn.GetConnection(server)
+		fmt.Println(a)
 	}
 }
 
