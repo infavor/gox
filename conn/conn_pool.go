@@ -8,6 +8,7 @@ import (
 	"container/list"
 	"errors"
 	"github.com/hetianyi/gox/logger"
+	"github.com/hetianyi/gox/timer"
 	"net"
 	"strconv"
 	"sync"
@@ -16,13 +17,13 @@ import (
 
 // pool is a connection pool.
 type pool struct {
-	maxSize     uint
-	currentSize uint
-	connList    *list.List
-	listLock    *sync.Mutex
-	// registeredConnMap stores the connection's max idle deadline
-	registeredConnMap map[*net.Conn]time.Time
-	connFactory       *ConnectionFactory
+	maxSize               uint
+	currentSize           uint
+	connList              *list.List
+	listLock              *sync.Mutex
+	registeredConnMap     map[*net.Conn]time.Time   // registeredConnMap stores the connection's max idle deadline
+	registeredConnAttrMap map[*net.Conn]interface{} // registeredConnAttrMap stores attributes with this connection
+	connFactory           *ConnectionFactory
 }
 
 // ConnectionFactory is a factory which creates connection for specific server。
@@ -48,12 +49,13 @@ func NewPool(size uint, connFactory *ConnectionFactory) *pool {
 	}
 
 	p := &pool{
-		maxSize:           size,
-		currentSize:       0,
-		connList:          list.New(),
-		listLock:          new(sync.Mutex),
-		connFactory:       connFactory,
-		registeredConnMap: make(map[*net.Conn]time.Time),
+		maxSize:               size,
+		currentSize:           0,
+		connList:              list.New(),
+		listLock:              new(sync.Mutex),
+		connFactory:           connFactory,
+		registeredConnMap:     make(map[*net.Conn]time.Time),
+		registeredConnAttrMap: make(map[*net.Conn]interface{}),
 	}
 	go p.expireConnections()
 	return p
@@ -71,33 +73,34 @@ func (fac *ConnectionFactory) createConn() (*net.Conn, error) {
 }
 
 // GetConnection gets a connection from pool,
-func (p *pool) GetConnection() (*net.Conn, error) {
+func (p *pool) GetConnection() (*net.Conn, interface{}, error) {
 	p.listLock.Lock()
 	defer p.listLock.Unlock()
 	if p.connList.Len() > 0 {
-		return p.connList.Remove(p.connList.Front()).(*net.Conn), nil
+		co := p.connList.Remove(p.connList.Front()).(*net.Conn)
+		return co, p.registeredConnAttrMap[co], nil
 	}
 	if p.currentSize >= p.maxSize {
-		return nil, errors.New("connection pool is full")
+		return nil, nil, errors.New("connection pool is full")
 	}
 	c, err := p.connFactory.createConn()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	p.currentSize++
 	p.registeredConnMap[c] = time.Now().Add(p.connFactory.ConnMaxIdleTime)
-	return c, nil
+	return c, nil, nil
 }
 
 // ReturnConnection returns a healthy connection
-func (p *pool) ReturnConnection(c *net.Conn) {
+func (p *pool) ReturnConnection(c *net.Conn, attr interface{}) {
 	p.listLock.Lock()
 	defer func() {
-		p.currentSize--
 		p.listLock.Unlock()
 	}()
 	if c != nil {
 		p.registeredConnMap[c] = time.Now().Add(p.connFactory.ConnMaxIdleTime)
+		p.registeredConnAttrMap[c] = attr
 		p.connList.PushBack(c)
 	}
 }
@@ -121,8 +124,7 @@ func (s *Server) GetConnectionString() string {
 
 // ReturnBrokenConnection returns a broken connection.
 func (p *pool) expireConnections() {
-	t := time.NewTicker(p.connFactory.ConnMaxIdleTime)
-	for {
+	timer.Start(0, p.connFactory.ConnMaxIdleTime, 0, func(t *timer.Timer) {
 		now := time.Now()
 		var next *list.Element
 		for e := p.connList.Front(); e != nil; e = next {
@@ -130,10 +132,11 @@ func (p *pool) expireConnections() {
 			next = e.Next()
 			if p.registeredConnMap[c].Unix() <= now.Unix() {
 				p.connList.Remove(e)
+				delete(p.registeredConnMap, c)
+				delete(p.registeredConnAttrMap, c)
 				logger.Debug("expire connection:", &c)
 				p.ReturnBrokenConnection(c)
 			}
 		}
-		<-t.C
-	}
+	})
 }
