@@ -125,7 +125,6 @@ func (s *Server) GetConnectionString() string {
 // ReturnBrokenConnection returns a broken connection.
 func (p *pool) expireConnections() {
 	timer.Start(0, p.connFactory.ConnMaxIdleTime, 0, func(t *timer.Timer) {
-		logger.Debug("check connection expiration", "当前总数：", p.connList.Len())
 		now := time.Now()
 		var next *list.Element
 		p.listLock.Lock()
@@ -142,7 +141,6 @@ func (p *pool) expireConnections() {
 					if c != nil {
 						(*c).Close()
 					}
-					fmt.Println("当前size", p.currentSize)
 				}
 			}
 		}, func(e interface{}) {})
