@@ -8,10 +8,10 @@ import (
 	"container/list"
 	"errors"
 	"github.com/hetianyi/gox"
+	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/timer"
 	"net"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -29,15 +29,36 @@ type pool struct {
 
 // ConnectionFactory is a factory which creates connection for specific server。
 type ConnectionFactory struct {
-	Server          *Server
+	Server          Server
 	ConnMaxIdleTime time.Duration
 	DialogTimeout   time.Duration
 }
 
 // Server defines a server connection info.
-type Server struct {
+type Server interface {
+	ConnectionString() string
+	GetHost() string
+	GetPort() uint16
+}
+
+type PlainServer struct {
 	Host string `json:"host"`
-	Port int    `json:"port"`
+	Port uint16 `json:"port"`
+}
+
+// GetConnectionString gets the server's connection string.
+func (ps *PlainServer) ConnectionString() string {
+	return ps.Host + ":" + convert.Uint16ToStr(ps.Port)
+}
+
+// GetHost returns server's host.
+func (ps *PlainServer) GetHost() string {
+	return ps.Host + ":" + convert.Uint16ToStr(ps.Port)
+}
+
+// GetPort returns server's port.
+func (ps *PlainServer) GetPort() uint16 {
+	return ps.Port
 }
 
 // NewPool creates a connection pool.
@@ -65,11 +86,11 @@ func NewPool(size uint, connFactory *ConnectionFactory) *pool {
 // createConn creates a connection.
 func (fac *ConnectionFactory) createConn() (*net.Conn, error) {
 	d := net.Dialer{Timeout: fac.DialogTimeout}
-	conn, err := d.Dial("tcp", fac.Server.Host+":"+strconv.Itoa(fac.Server.Port))
+	conn, err := d.Dial("tcp", fac.Server.ConnectionString())
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug("create new connection to ", fac.Server.GetConnectionString())
+	logger.Debug("create new connection to ", fac.Server.ConnectionString())
 	return &conn, nil
 }
 
@@ -114,11 +135,6 @@ func (p *pool) ReturnBrokenConnection(conn *net.Conn) {
 	if conn != nil {
 		(*conn).Close()
 	}
-}
-
-// GetConnectionString gets the server's connection string.
-func (s *Server) GetConnectionString() string {
-	return s.Host + ":" + strconv.Itoa(s.Port)
 }
 
 // ReturnBrokenConnection returns a broken connection.

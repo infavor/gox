@@ -16,14 +16,44 @@ func IntToStr(value int) string {
 	return strconv.Itoa(value)
 }
 
-// Int64ToStr converts int64 to string.
-func Int64ToStr(value int64) string {
-	return strconv.FormatInt(value, 10)
+// IntToStr converts int to string.
+func UintToStr(value uint) string {
+	return strconv.FormatUint(uint64(value), 10)
+}
+
+// Int32ToStr converts int32 to string.
+func Int8ToStr(value int8) string {
+	return strconv.FormatInt(int64(value), 10)
+}
+
+// Int32ToStr converts int32 to string.
+func Uint8ToStr(value uint8) string {
+	return strconv.FormatUint(uint64(value), 10)
+}
+
+// Int32ToStr converts int32 to string.
+func Int16ToStr(value int16) string {
+	return strconv.FormatInt(int64(value), 10)
+}
+
+// Int32ToStr converts int32 to string.
+func Uint16ToStr(value uint16) string {
+	return strconv.FormatUint(uint64(value), 10)
 }
 
 // Int32ToStr converts int32 to string.
 func Int32ToStr(value int32) string {
 	return strconv.FormatInt(int64(value), 10)
+}
+
+// Int32ToStr converts int32 to string.
+func Uint32ToStr(value uint32) string {
+	return strconv.FormatUint(uint64(value), 10)
+}
+
+// Int64ToStr converts int64 to string.
+func Int64ToStr(value int64) string {
+	return strconv.FormatInt(value, 10)
 }
 
 // Uint64ToStr converts uint64 to string.
@@ -59,6 +89,51 @@ func StrToInt(value string) (int, error) {
 	return strconv.Atoi(value)
 }
 
+// StrToInt converts string to int.
+func StrToUint(value string) (uint, error) {
+	v, err := strconv.ParseUint(value, 10, 32)
+	if err != nil {
+		return 0, nil
+	}
+	return uint(v), nil
+}
+
+// StrToInt8 converts string to int8.
+func StrToInt8(value string) (int8, error) {
+	v, err := strconv.ParseInt(value, 10, 8)
+	if err != nil {
+		return 0, nil
+	}
+	return int8(v), nil
+}
+
+// StrToUint8 converts string to uint8.
+func StrToUint8(value string) (uint8, error) {
+	v, err := strconv.ParseUint(value, 10, 8)
+	if err != nil {
+		return 0, nil
+	}
+	return uint8(v), nil
+}
+
+// StrToInt16 converts string to int16.
+func StrToInt16(value string) (int16, error) {
+	v, err := strconv.ParseInt(value, 10, 16)
+	if err != nil {
+		return 0, nil
+	}
+	return int16(v), nil
+}
+
+// StrToUint16 converts string to int16.
+func StrToUint16(value string) (uint16, error) {
+	v, err := strconv.ParseUint(value, 10, 16)
+	if err != nil {
+		return 0, nil
+	}
+	return uint16(v), nil
+}
+
 // StrToInt32 converts string to int32.
 func StrToInt32(value string) (int32, error) {
 	v, err := strconv.ParseInt(value, 10, 32)
@@ -68,11 +143,6 @@ func StrToInt32(value string) (int32, error) {
 	return int32(v), nil
 }
 
-// StrToInt64 converts string to int64.
-func StrToInt64(value string) (int64, error) {
-	return strconv.ParseInt(value, 10, 64)
-}
-
 // StrToUint32 converts string to uint32.
 func StrToUint32(value string) (uint32, error) {
 	v, err := strconv.ParseUint(value, 10, 32)
@@ -80,6 +150,11 @@ func StrToUint32(value string) (uint32, error) {
 		return 0, nil
 	}
 	return uint32(v), nil
+}
+
+// StrToInt64 converts string to int64.
+func StrToInt64(value string) (int64, error) {
+	return strconv.ParseInt(value, 10, 64)
 }
 
 // StrToUint64 converts string to uint64.

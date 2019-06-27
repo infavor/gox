@@ -29,8 +29,8 @@ func SetDefaultMaxConnIdleTime(connMaxIdleTime time.Duration) {
 
 // InitServerSettings initializes settings of a server.
 // It is better way that initialize a server settings before getting connections from it's pool.
-func InitServerSettings(server *Server, maxConn uint, connMaxIdleTime time.Duration) {
-	s := server.GetConnectionString()
+func InitServerSettings(server Server, maxConn uint, connMaxIdleTime time.Duration) {
+	s := server.ConnectionString()
 	config[s] = maxConn
 	if poolManager[s] == nil {
 		poolManager[s] = NewPool(maxConn, &ConnectionFactory{
@@ -42,22 +42,22 @@ func InitServerSettings(server *Server, maxConn uint, connMaxIdleTime time.Durat
 }
 
 // getServerConnPool gets server's connection pool.
-func getServerConnPool(server *Server) *pool {
-	p := poolManager[server.GetConnectionString()]
+func getServerConnPool(server Server) *pool {
+	p := poolManager[server.ConnectionString()]
 	if p == nil {
 		InitServerSettings(server, defaultMaxConn, defaultMaxConnIdleTime)
-		p = poolManager[server.GetConnectionString()]
+		p = poolManager[server.ConnectionString()]
 	}
 	return p
 }
 
 // GetConnection tries to get a connection from it's connection pool.
-func GetConnection(server *Server) (*net.Conn, interface{}, error) {
+func GetConnection(server Server) (*net.Conn, interface{}, error) {
 	return getServerConnPool(server).GetConnection()
 }
 
 // ReturnConnection returns connection to it's connection pool.
-func ReturnConnection(server *Server, conn *net.Conn, addr interface{}, broken bool) {
+func ReturnConnection(server Server, conn *net.Conn, addr interface{}, broken bool) {
 	p := getServerConnPool(server)
 	if broken {
 		p.ReturnBrokenConnection(conn)

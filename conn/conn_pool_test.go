@@ -48,7 +48,7 @@ func TestServer(t *testing.T) {
 }
 
 func TestClient(t *testing.T) {
-	server := &conn.Server{
+	server := &conn.PlainServer{
 		Host: "127.0.0.1",
 		Port: 8899,
 	}
@@ -77,7 +77,7 @@ func TestClient(t *testing.T) {
 }
 
 func TestAttr(t *testing.T) {
-	server := &conn.Server{
+	server := &conn.PlainServer{
 		Host: "127.0.0.1",
 		Port: 8899,
 	}
