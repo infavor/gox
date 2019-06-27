@@ -7,7 +7,6 @@ package conn
 import (
 	"container/list"
 	"errors"
-	"fmt"
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/timer"
@@ -70,7 +69,7 @@ func (fac *ConnectionFactory) createConn() (*net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug("create new connection:", &conn)
+	logger.Debug("create new connection to ", fac.Server.GetConnectionString())
 	return &conn, nil
 }
 
