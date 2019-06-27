@@ -53,7 +53,7 @@ func (ps *PlainServer) ConnectionString() string {
 
 // GetHost returns server's host.
 func (ps *PlainServer) GetHost() string {
-	return ps.Host + ":" + convert.Uint16ToStr(ps.Port)
+	return ps.Host
 }
 
 // GetPort returns server's port.
