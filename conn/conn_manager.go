@@ -57,11 +57,11 @@ func GetConnection(server Server) (*net.Conn, interface{}, error) {
 }
 
 // ReturnConnection returns connection to it's connection pool.
-func ReturnConnection(server Server, conn *net.Conn, addr interface{}, broken bool) {
+func ReturnConnection(server Server, conn *net.Conn, attr interface{}, broken bool) {
 	p := getServerConnPool(server)
 	if broken {
 		p.ReturnBrokenConnection(conn)
 	} else {
-		p.ReturnConnection(conn, addr)
+		p.ReturnConnection(conn, attr)
 	}
 }
