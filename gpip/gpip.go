@@ -6,6 +6,7 @@ package gpip
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/hetianyi/gox/convert"
 	"github.com/json-iterator/go"
 	"io"
@@ -16,6 +17,8 @@ import (
 const (
 	// frameHeadSize frame head byte array size
 	frameHeadSize = 8
+	// limiting max header size for protecting the system.
+	projectedHeaderLength = 2 << 12 // 8k
 )
 
 // pipFrame defines a pipe request instance.
@@ -76,6 +79,9 @@ func (pip *Pip) Receive(
 		return err
 	}
 	headerLen := convert.Bytes2Length(headerLenBytes)
+	if projectedHeaderLength > projectedHeaderLength {
+		return errors.New("exceed max header size")
+	}
 	bodyLen := convert.Bytes2Length(bodyLenBytes)
 	headerBs := make([]byte, headerLen)
 	if _, err := io.ReadFull(pip.Conn, headerBs); err != nil {
