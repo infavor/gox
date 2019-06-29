@@ -79,7 +79,7 @@ func (pip *Pip) Receive(
 		return err
 	}
 	headerLen := convert.Bytes2Length(headerLenBytes)
-	if projectedHeaderLength > projectedHeaderLength {
+	if headerLen > projectedHeaderLength {
 		return errors.New("exceed max header size")
 	}
 	bodyLen := convert.Bytes2Length(bodyLenBytes)
