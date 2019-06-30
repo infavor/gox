@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/convert"
+	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/timer"
 	"io"
 	"math"
@@ -60,6 +61,7 @@ type progress struct {
 	lastTime int64
 	reader   *WrappedReader
 	writer   *WrappedWriter
+	timer    *timer.Timer
 }
 
 type WrappedWriter struct {
@@ -99,8 +101,8 @@ func New(maxValue int64, width int, title string, titlePos Pos) *progress {
 		fmt.Println(title)
 	}
 
-	timer.Start(0, 0, time.Millisecond*500, func(t *timer.Timer) {
-		p.render(t)
+	p.timer = timer.Start(0, 0, time.Millisecond*500, func(t *timer.Timer) {
+		p.render()
 	})
 	return p
 }
@@ -122,8 +124,8 @@ func NewWrappedReaderProgress(maxValue int64, width int, title string, titlePos 
 		fmt.Println(title)
 	}
 
-	timer.Start(0, 0, time.Millisecond*500, func(t *timer.Timer) {
-		p.render(t)
+	p.timer = timer.Start(0, 0, time.Millisecond*500, func(t *timer.Timer) {
+		p.render()
 	})
 	return p
 }
@@ -145,37 +147,47 @@ func NewWrappedWriterProgress(maxValue int64, width int, title string, titlePos 
 		fmt.Println(title)
 	}
 
-	timer.Start(0, 0, time.Millisecond*500, func(t *timer.Timer) {
-		p.render(t)
+	p.timer = timer.Start(0, 0, time.Millisecond*500, func(t *timer.Timer) {
+		p.render()
 	})
 	return p
 }
 
 func (p *progress) Update(value int64) {
-	defer p.render(nil)
+	p.lock.Lock()
+	defer func() {
+		p.lock.Unlock()
+		if p.Value >= p.MaxValue {
+			p.render()
+		}
+	}()
 	p.Value += value
 }
 
 func (p *progress) Increase() {
-	defer p.render(nil)
+	p.lock.Lock()
+	defer func() {
+		p.lock.Unlock()
+		if p.Value >= p.MaxValue {
+			p.render()
+		}
+	}()
 	if p.Value >= p.MaxValue {
 		return
 	}
 	p.Value += 1
 }
 
-func (p *progress) render(t *timer.Timer) {
+func (p *progress) render() {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	defer func() {
 		p.buffer.Reset()
 		p.last = p.Value
 		p.lastTime = gox.GetTimestamp(time.Now())
-		if t != nil {
-			p.shine = !p.shine
-		}
-		if p.Value >= p.MaxValue && t != nil {
-			t.Destroy()
+		if p.Value >= p.MaxValue {
+			logger.Debug("stop progress")
+			p.timer.Destroy()
 		}
 	}()
 	finish := int(math.Floor(float64(p.Value) / float64(p.MaxValue) * float64(p.Width-2)))
@@ -190,7 +202,7 @@ func (p *progress) render(t *timer.Timer) {
 	bs := p.buffer.String()
 	percent := float64(p.Value) / float64(p.MaxValue) * 100
 	if p.Value > p.last {
-		p.timeLeft = int64(math.Ceil(float64(p.MaxValue-p.Value) / float64(p.Value-p.last) * float64(time.Millisecond*500) / float64(time.Second) / 1000))
+		p.timeLeft = int64(math.Ceil(float64(p.MaxValue-p.Value) / float64(p.Value-p.last) * float64(time.Millisecond*500) / float64(time.Second)))
 	}
 
 	fmt.Fprintf(os.Stdout, "\r%s%s%s%s%s%s%s%.2f%%%s",
@@ -203,7 +215,7 @@ func (p *progress) render(t *timer.Timer) {
 		p.pat.right,
 		gox.TValue(percent < 10, "  ", gox.TValue(percent < 100, " ", "")),
 		percent,
-		gox.TValue(p.Value == p.MaxValue, "", fmt.Sprintf(" | %s", HumanReadableTime(p.timeLeft))))
+		gox.TValue(p.Value == p.MaxValue, "\n", fmt.Sprintf(" | %s", HumanReadableTime(p.timeLeft))))
 }
 
 func HumanReadableTime(second int64) string {
