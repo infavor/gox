@@ -3,6 +3,7 @@ package pg_test
 import (
 	"bytes"
 	"fmt"
+	"github.com/hetianyi/gox/pg"
 	"math"
 	"os"
 	"testing"
@@ -27,4 +28,8 @@ func Test11(t *testing.T) {
 	}
 	bs := buffer.String()
 	fmt.Fprintf(os.Stdout, "\r%c%s%c%s%c", '[', fs, '>', bs, ']')
+}
+
+func TestHumanReadableTime(t *testing.T) {
+	fmt.Println(pg.HumanReadableTime(3725))
 }
