@@ -178,6 +178,12 @@ func (p *progress) Increase() {
 	p.Value += 1
 }
 
+func (p *progress) Destroy() {
+	p.timer.Destroy()
+	fmt.Println()
+	logger.Debug("progressbar is destroyed")
+}
+
 func (p *progress) render() {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -186,7 +192,7 @@ func (p *progress) render() {
 		p.last = p.Value
 		p.lastTime = gox.GetTimestamp(time.Now())
 		if p.Value >= p.MaxValue {
-			logger.Debug("stop progress")
+			logger.Debug("destroy progressbar normally")
 			p.timer.Destroy()
 		}
 	}()
