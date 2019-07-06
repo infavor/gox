@@ -12,6 +12,10 @@ import (
 	"sync"
 )
 
+type WorkPool interface {
+	Push(task func()) error
+}
+
 // pool is a task pool which can limit the number of concurrent task.
 type pool struct {
 	coreSize          int
@@ -26,7 +30,7 @@ type pool struct {
 }
 
 // New creates a task pool.
-func New(coreSize int, maxWait int) *pool {
+func New(coreSize int, maxWait int) WorkPool {
 	p := &pool{
 		coreSize:          coreSize,
 		maxWait:           maxWait,
