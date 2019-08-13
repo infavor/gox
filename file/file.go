@@ -122,6 +122,17 @@ func AppendFile(path string) (*os.File, error) {
 	return os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 }
 
+// OpenFile is the generalized open call; most users will use Open
+// or Create instead. It opens the named file with specified flag
+// (O_RDONLY etc.) and perm (before umask), if applicable. If successful,
+// methods on the returned File can be used for I/O.
+// If there is an error, it will be of type *PathError.
+//
+// Copy from os.OpenFile.
+func OpenFile(path string, flag int, perm os.FileMode) (*os.File, error) {
+	return os.OpenFile(path, flag, perm)
+}
+
 // CreateDir creates a new directory.
 func CreateDir(path string) error {
 	return os.Mkdir(path, 0755)
