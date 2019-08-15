@@ -25,6 +25,22 @@ func TestSimpleTextFormatter_Format(t *testing.T) {
 	logger.Info("Hello")
 }
 
+func TestNoneTextFormatter_Format(t *testing.T) {
+	logger.Init(&logger.Config{
+		Level:     logger.InfoLevel,
+		Formatter: &logger.NoneTextFormatter{},
+	})
+	logger.Info("Hello")
+}
+
+func TestShortTextFormatter_Format(t *testing.T) {
+	logger.Init(&logger.Config{
+		Level:     logger.InfoLevel,
+		Formatter: &logger.ShortTextFormatter{},
+	})
+	logger.Info("Hello")
+}
+
 func TestPrintColor(t *testing.T) {
 	logger.PrintColor([]byte(aurora.Cyan("Hello").String()))
 }
