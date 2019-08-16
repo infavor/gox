@@ -282,7 +282,7 @@ func triggerExchange(t time.Time) {
 			// 压缩历史日志
 			go compressOldFile(curOut.Name())
 		}
-		fmt.Println("create new log file:", newfile)
+		// fmt.Println("create new log file:", newfile)
 		curWriteLen = 0
 		curOut = newOut
 		return
@@ -290,6 +290,30 @@ func triggerExchange(t time.Time) {
 	// 限制文件大小
 	index := 1
 	for file.Exists(newfile) || file.Exists(newfile+archiveExt) {
+		if file.Exists(newfile) {
+			fInfo, _ := file.GetFileInfo(newfile)
+			if (sizePolicy == MB64 && fInfo.Size() < 2<<25) ||
+				(sizePolicy == MB128 && fInfo.Size() < 2<<26) ||
+				(sizePolicy == MB256 && fInfo.Size() < 2<<27) ||
+				(sizePolicy == MB512 && fInfo.Size() < 2<<28) ||
+				(sizePolicy == MB1024 && fInfo.Size() < 2<<29) {
+
+				newOut, err := file.AppendFile(newfile)
+				if err != nil {
+					return
+				}
+				if curOut != nil {
+					curOut.Close()
+					// 压缩历史日志
+					go compressOldFile(curOut.Name())
+				}
+				// fmt.Println("create new log file:", newfile)
+				curWriteLen = fInfo.Size()
+				curOut = newOut
+				return
+			}
+		}
+
 		buffer.Reset()
 		buffer.WriteString(newfile[0:strings.LastIndex(newfile, "-")])
 		buffer.WriteString("-part")

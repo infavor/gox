@@ -12,7 +12,7 @@ func main() {
 		RollingPolicy:      []int{logger.HOUR, logger.MB64},
 		Write2File:         true,
 		AlwaysWriteConsole: false,
-		RollingFileDir:     "D:\\Hetianyi\\svn\\gox\\logger\\tes",
+		RollingFileDir:     "D:\\tmp\\output",
 		RollingFileName:    "godfs",
 	})
 
