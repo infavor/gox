@@ -119,7 +119,7 @@ func (w *logWriter) Write(p []byte) (int, error) {
 	triggerExchange(now)
 	if curOut != nil {
 		if alwaysWriteConsole {
-			return colorWriter.Write(p)
+			colorWriter.Write(p)
 		}
 		return curOut.Write(writeP)
 	}
