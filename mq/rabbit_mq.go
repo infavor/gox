@@ -67,13 +67,13 @@ func (c *RabbitClient) Consume() error {
 	consumes := make(map[string]<-chan amqp.Delivery)
 	for _, name := range c.ConsumeQueues {
 		d, err := c.channel.Consume(
-			name,  // queue
-			"",    // consumer
-			false, // auto-ack
-			false, // exclusive
-			false, // no-local
-			false, // no-wait
-			nil,   // args
+			name,      // queue
+			"",        // consumer
+			c.AutoACK, // auto-ack
+			false,     // exclusive
+			false,     // no-local
+			false,     // no-wait
+			nil,       // args
 		)
 		if err != nil {
 			logger.Error("error consume queue: ", err)
@@ -92,12 +92,7 @@ func (c *RabbitClient) Consume() error {
 				dd := d
 				if err := c.ConsumeHandler(_name, dd); err != nil {
 					logger.Error("error consume msg: ", err)
-					if !c.AutoACK {
-						dd.Nack(false, true)
-					}
-					continue
 				}
-				dd.Ack(false)
 			}
 			logger.Error("msgs break")
 		}()

@@ -31,6 +31,7 @@ func TestInitRabbitMQClient(t *testing.T) {
 		ConsumeQueues: []string{"url_list_queue", "html_content_queue"},
 		ConsumeHandler: func(queueName string, d amqp.Delivery) error {
 			logger.Info("从队列 ", queueName, " 收到消息：", string(d.Body))
+			d.Ack(false)
 			return nil
 		},
 	}
