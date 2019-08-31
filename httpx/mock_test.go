@@ -66,7 +66,7 @@ func TestMockGet3(t *testing.T) {
 }
 
 func TestMockGet4(t *testing.T) {
-	result, _, err := httpx.Mock().URL("https://hub.docker.com/v2/repositories/library/redis/tags/").
+	result, _, err := httpx.Mock().URL("https://hub.docker.com/v2/repositories/library/redix/tags/").
 		Parameter("page_size", "25").
 		Parameter("page", "1").
 		Get().Success(new(map[string]interface{})).Error(func(status int, response []byte) {
@@ -81,7 +81,7 @@ func TestMockGet4(t *testing.T) {
 }
 
 func TestMockGet5(t *testing.T) {
-	result, _, err := httpx.Mock().URL("https://hub.docker.com/api/content/v1/products/images/redis").
+	result, _, err := httpx.Mock().URL("https://hub.docker.com/api/content/v1/products/images/redix").
 		Get().Success("").Error(func(status int, response []byte) {
 		logger.Error("status ", status, ", response: ", string(response))
 	}).Do()

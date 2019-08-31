@@ -4,9 +4,9 @@ go 1.12
 
 require (
 	github.com/armon/go-metrics v0.0.0-20190430140413-ec5e00d3c878 // indirect
-	github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310
 	github.com/disintegration/imaging v1.6.0
 	github.com/dsnet/compress v0.0.1 // indirect
+	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/golang/snappy v0.0.1 // indirect
@@ -33,6 +33,7 @@ require (
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.2
+	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8 // indirect
 	golang.org/x/image v0.0.0-20190523035834-f03afa92d3ff
