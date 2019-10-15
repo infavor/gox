@@ -25,11 +25,11 @@ var (
 )
 
 // FileTransactionProcessor is a model for processing one single file of a form.
-type FileTransactionProcessor interface {
-	Before() error
-	Write(bs []byte) error
-	Success() error
-	Error(err error)
+type FileTransactionProcessor struct {
+	Before  func() error
+	Write   func(bs []byte) error
+	Success func() error
+	Error   func(err error)
 }
 
 // FileFormReader processes io operation during file upload.
@@ -54,7 +54,7 @@ type FileUploadHandler struct {
 	// call when read a plain text field.
 	OnFormField func(paraName, paraValue string)
 	// call when about begin to read file body from form, need to provide an io.WriteCloser to write file bytes.
-	OnFileField func(paraName, fileName string) FileTransactionProcessor
+	OnFileField func(paraName, fileName string) *FileTransactionProcessor
 }
 
 // Unread return extra read bytes for next read.
@@ -205,10 +205,12 @@ func (reader *FileFormReader) readNextLine() (string, error) {
 }
 
 // readFileBody reads a file body part.
-func (handler *FileUploadHandler) readFileBody(fileName string, processor FileTransactionProcessor) error {
-	err := processor.Before()
-	if err != nil {
-		return err
+func (handler *FileUploadHandler) readFileBody(fileName string, processor *FileTransactionProcessor) error {
+	if processor.Before != nil {
+		err := processor.Before()
+		if err != nil {
+			return err
+		}
 	}
 	separatorLength := len(handler.separator)
 	for {
@@ -297,10 +299,12 @@ func (handler *FileUploadHandler) readFileBody(fileName string, processor FileTr
 	return nil
 }
 
-func handleError(processor FileTransactionProcessor, err error) {
-	gox.Try(func() {
-		processor.Error(err)
-	}, func(i interface{}) {})
+func handleError(processor *FileTransactionProcessor, err error) {
+	if processor.Error != nil {
+		gox.Try(func() {
+			processor.Error(err)
+		}, func(i interface{}) {})
+	}
 }
 
 // ByteCopy copies bytes
