@@ -358,6 +358,7 @@ func encodeParameters(params map[string][]string) []byte {
 				buffer.WriteString("&")
 			}
 		}
+		buffer.WriteString("&")
 	}
 	return buffer.Bytes()
 }
