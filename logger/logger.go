@@ -321,6 +321,7 @@ func triggerExchange(t time.Time) {
 				// fmt.Println("create new log file:", newfile)
 				curWriteLen = fInfo.Size()
 				curOut = newOut
+				buffCurOut = bufio.NewWriterSize(curOut, buffSize)
 				return
 			}
 		}
@@ -345,6 +346,7 @@ func triggerExchange(t time.Time) {
 	}
 	curWriteLen = 0
 	curOut = newOut
+	buffCurOut = bufio.NewWriterSize(curOut, buffSize)
 }
 
 func parsePolicy() {
