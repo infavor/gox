@@ -44,3 +44,16 @@ func TestShortTextFormatter_Format(t *testing.T) {
 func TestPrintColor(t *testing.T) {
 	logger.PrintColor([]byte(aurora.Cyan("Hello").String()))
 }
+
+func TestBuff(t *testing.T) {
+	logger.Init(&logger.Config{
+		Level:              logger.InfoLevel,
+		Write2File:         true,
+		AlwaysWriteConsole: true,
+		RollingFileDir:     "D:\\tmp\\logs",
+	})
+	for i := 0; i < 100; i++ {
+		logger.Info(i)
+	}
+	logger.Sync()
+}

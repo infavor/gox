@@ -4,6 +4,7 @@
 package logger
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/hetianyi/gox"
@@ -75,13 +76,14 @@ var (
 	logDirectory       string
 	LogFileName        string
 	curOut             *os.File
+	buffCurOut         *bufio.Writer
 	lock               *sync.Mutex
 	timePolicy         = HOUR
 	sizePolicy         = SIZE_NO_LIMIT
 	logLevel           = PanicLevel
-
-	colorPattern = regexp.MustCompile(colorFlag)
-	colorWriter  io.Writer
+	buffSize           = 2 << 10
+	colorPattern       = regexp.MustCompile(colorFlag)
+	colorWriter        io.Writer
 )
 
 func init() {
@@ -106,7 +108,6 @@ type logWriter struct {
 func (w *logWriter) Write(p []byte) (int, error) {
 	defer func() {
 		lastWriteTime = time.Now()
-
 	}()
 	writeP := colorPattern.ReplaceAll(p, []byte(""))
 	defer func() {
@@ -117,11 +118,11 @@ func (w *logWriter) Write(p []byte) (int, error) {
 	}
 	now := time.Now()
 	triggerExchange(now)
-	if curOut != nil {
+	if buffCurOut != nil {
 		if alwaysWriteConsole {
 			colorWriter.Write(p)
 		}
-		return curOut.Write(writeP)
+		return buffCurOut.Write(writeP)
 	}
 	return colorWriter.Write(p)
 }
@@ -169,6 +170,15 @@ func Init(config *Config) {
 	// Only log the warning severity or above.
 	var l = uint32(config.Level)
 	logrus.SetLevel(logrus.Level(l))
+}
+
+// Sync synchronizes log buffer to log file.
+//
+// It is usually called before the process shutdown.
+func Sync() {
+	if buffCurOut != nil {
+		buffCurOut.Flush()
+	}
 }
 
 // IsInitialized return if logger was initialized before.
@@ -285,6 +295,7 @@ func triggerExchange(t time.Time) {
 		// fmt.Println("create new log file:", newfile)
 		curWriteLen = 0
 		curOut = newOut
+		buffCurOut = bufio.NewWriterSize(curOut, buffSize)
 		return
 	}
 	// 限制文件大小
