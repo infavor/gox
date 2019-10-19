@@ -84,7 +84,7 @@ var (
 	buffSize           = 2 << 10
 	colorPattern       = regexp.MustCompile(colorFlag)
 	colorWriter        io.Writer
-	EnableCache        = false,
+	EnableCache        = false
 )
 
 func init() {
@@ -155,7 +155,7 @@ func Init(config *Config) {
 			RollingFileName:    "app",
 			RollingPolicy:      []int{YEAR, MB1024},
 			AlwaysWriteConsole: true,
-			EnableCache: false,
+			EnableCache:        false,
 		}
 	}
 	write2File = config.Write2File
