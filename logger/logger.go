@@ -84,6 +84,7 @@ var (
 	buffSize           = 2 << 10
 	colorPattern       = regexp.MustCompile(colorFlag)
 	colorWriter        io.Writer
+	EnableCache        = false,
 )
 
 func init() {
@@ -97,6 +98,7 @@ type Config struct {
 	Level              Level
 	Write2File         bool
 	AlwaysWriteConsole bool // 是否总是将日志写入控制台
+	EnableCache        bool
 	RollingFileDir     string
 	RollingFileName    string
 	RollingPolicy      []int
@@ -118,11 +120,21 @@ func (w *logWriter) Write(p []byte) (int, error) {
 	}
 	now := time.Now()
 	triggerExchange(now)
-	if buffCurOut != nil {
-		if alwaysWriteConsole {
-			colorWriter.Write(p)
+
+	if EnableCache {
+		if buffCurOut != nil {
+			if alwaysWriteConsole {
+				colorWriter.Write(p)
+			}
+			return buffCurOut.Write(writeP)
 		}
-		return buffCurOut.Write(writeP)
+	} else {
+		if curOut != nil {
+			if alwaysWriteConsole {
+				colorWriter.Write(p)
+			}
+			return curOut.Write(writeP)
+		}
 	}
 	return colorWriter.Write(p)
 }
@@ -143,6 +155,7 @@ func Init(config *Config) {
 			RollingFileName:    "app",
 			RollingPolicy:      []int{YEAR, MB1024},
 			AlwaysWriteConsole: true,
+			EnableCache: false,
 		}
 	}
 	write2File = config.Write2File
@@ -155,6 +168,7 @@ func Init(config *Config) {
 	LogFileName = file.FixPath(LogFileName)
 	rollingPolicy = config.RollingPolicy
 	alwaysWriteConsole = config.AlwaysWriteConsole
+	EnableCache = config.EnableCache
 	parsePolicy()
 	logLevel = config.Level
 	initialized = true
