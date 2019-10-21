@@ -7,18 +7,19 @@ import (
 	"sync"
 )
 
-// FixedSizeBinlogManager is a fixed size binlog file.
-type FixedSizeBinlogManager struct {
-	slotNum    int      // number of slots
-	slotSize   int      // byte size of each slot
-	out        *os.File // target binlog file
-	binlogFile string   // target binlog file
-	slotMap    []byte   // binlog slot map, this is stored in memory
-
-	lock *sync.Mutex
+// FixedSizeFileMap is a fixed size file map.
+type FixedSizeFileMap struct {
+	slotNum          int      // number of slots
+	slotSize         int      // byte size of each slot
+	out              *os.File // target binlog file
+	binlogFile       string   // target binlog file
+	slotMap          []byte   // binlog slot map, this is stored in memory
+	writingSlotIndex int      // current writing slot index
+	lock             *sync.Mutex
+	slotWriteLock    *sync.Mutex
 }
 
-func (m *FixedSizeBinlogManager) init() error {
+func (m *FixedSizeFileMap) init() error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -47,13 +48,23 @@ func (m *FixedSizeBinlogManager) init() error {
 	return nil
 }
 
+func (m *FixedSizeFileMap) lockSlot(slotIndex int) {
+	m.slotWriteLock.Lock()
+	defer m.slotWriteLock.Unlock()
+	m.writingSlotIndex = slotIndex
+}
+
 // Write writes data in a slot.
 //
 //  slotIndex begin from 0,
 //  data is slot data.
-func (m *FixedSizeBinlogManager) Write(slotIndex int, data []byte) error {
+func (m *FixedSizeFileMap) Write(slotIndex int, data []byte) error {
 	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.lockSlot(slotIndex)
+	defer func() {
+		m.writingSlotIndex = -1
+		m.lock.Unlock()
+	}()
 
 	if slotIndex < 0 || slotIndex >= m.slotNum {
 		return errors.New("index of out range")
@@ -84,7 +95,7 @@ func (m *FixedSizeBinlogManager) Write(slotIndex int, data []byte) error {
 }
 
 // Read reads slot data from binlog file.
-func (m *FixedSizeBinlogManager) Read(slotIndex int) ([]byte, error) {
+func (m *FixedSizeFileMap) Read(slotIndex int) ([]byte, error) {
 	if slotIndex < 0 || slotIndex >= m.slotNum {
 		return nil, errors.New("index of out range")
 	}
