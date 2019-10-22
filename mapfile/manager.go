@@ -1,22 +1,37 @@
-package binlog
+package mapfile
 
 import (
 	"errors"
 	"github.com/hetianyi/gox/file"
+	"io"
 	"os"
 	"sync"
 )
 
 // FixedSizeFileMap is a fixed size file map.
 type FixedSizeFileMap struct {
-	slotNum          int      // number of slots
-	slotSize         int      // byte size of each slot
-	out              *os.File // target binlog file
-	binlogFile       string   // target binlog file
-	slotMap          []byte   // binlog slot map, this is stored in memory
-	writingSlotIndex int      // current writing slot index
-	lock             *sync.Mutex
-	slotWriteLock    *sync.Mutex
+	slotNum       int      // number of slots
+	slotSize      int      // byte size of each slot
+	out           *os.File // target binlog file
+	binlogFile    string   // target binlog file
+	slotMap       []byte   // binlog slot map, this is stored in memory
+	slotLockMap   map[int]*sync.Mutex
+	lock          *sync.Mutex
+	slotWriteLock *sync.Mutex
+}
+
+// NewFileMap creates a new FixedSizeFileMap.
+func NewFileMap(slotNum, slotSize int, binlogFile string) (*FixedSizeFileMap, error) {
+	m := &FixedSizeFileMap{
+		slotNum:       slotNum,
+		slotSize:      slotSize,
+		binlogFile:    binlogFile,
+		slotLockMap:   make(map[int]*sync.Mutex),
+		lock:          new(sync.Mutex),
+		slotWriteLock: new(sync.Mutex),
+		slotMap:       make([]byte, slotNum),
+	}
+	return m, m.init()
 }
 
 func (m *FixedSizeFileMap) init() error {
@@ -42,16 +57,25 @@ func (m *FixedSizeFileMap) init() error {
 			if err != nil {
 				return err
 			}
+			_, err = io.ReadAtLeast(o, m.slotMap, m.slotNum)
+			if err != nil {
+				return err
+			}
 			m.out = o
 		}
 	}
 	return nil
 }
 
-func (m *FixedSizeFileMap) lockSlot(slotIndex int) {
+func (m *FixedSizeFileMap) lockSlot(slotIndex int) *sync.Mutex {
 	m.slotWriteLock.Lock()
 	defer m.slotWriteLock.Unlock()
-	m.writingSlotIndex = slotIndex
+	lo := m.slotLockMap[slotIndex]
+	if lo == nil {
+		lo = new(sync.Mutex)
+		m.slotLockMap[slotIndex] = lo
+	}
+	return lo
 }
 
 // Write writes data in a slot.
@@ -60,9 +84,15 @@ func (m *FixedSizeFileMap) lockSlot(slotIndex int) {
 //  data is slot data.
 func (m *FixedSizeFileMap) Write(slotIndex int, data []byte) error {
 	m.lock.Lock()
-	m.lockSlot(slotIndex)
+	lo := m.lockSlot(slotIndex)
+	if lo != nil {
+		lo.Lock()
+	}
 	defer func() {
-		m.writingSlotIndex = -1
+		if lo != nil {
+			delete(m.slotLockMap, slotIndex)
+			lo.Unlock()
+		}
 		m.lock.Unlock()
 	}()
 
@@ -96,6 +126,16 @@ func (m *FixedSizeFileMap) Write(slotIndex int, data []byte) error {
 
 // Read reads slot data from binlog file.
 func (m *FixedSizeFileMap) Read(slotIndex int) ([]byte, error) {
+	lo := m.lockSlot(slotIndex)
+	if lo != nil {
+		lo.Lock()
+	}
+	defer func() {
+		if lo != nil {
+			lo.Unlock()
+		}
+	}()
+
 	if slotIndex < 0 || slotIndex >= m.slotNum {
 		return nil, errors.New("index of out range")
 	}
