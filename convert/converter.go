@@ -1,6 +1,6 @@
 // Copyright (C) 2019 tisnyo <tisnyo@gmail.com>.
 //
-// package convert can helps convert types to another type.
+// package convert helps you convert types to another type.
 // license that can be found in the LICENSE file.
 package convert
 
@@ -16,27 +16,27 @@ func IntToStr(value int) string {
 	return strconv.Itoa(value)
 }
 
-// IntToStr converts int to string.
+// UintToStr converts int to string.
 func UintToStr(value uint) string {
 	return strconv.FormatUint(uint64(value), 10)
 }
 
-// Int32ToStr converts int32 to string.
+// Int8ToStr converts int32 to string.
 func Int8ToStr(value int8) string {
 	return strconv.FormatInt(int64(value), 10)
 }
 
-// Int32ToStr converts int32 to string.
+// Uint8ToStr converts int32 to string.
 func Uint8ToStr(value uint8) string {
 	return strconv.FormatUint(uint64(value), 10)
 }
 
-// Int32ToStr converts int32 to string.
+// Int16ToStr converts int32 to string.
 func Int16ToStr(value int16) string {
 	return strconv.FormatInt(int64(value), 10)
 }
 
-// Int32ToStr converts int32 to string.
+// Uint16ToStr converts int32 to string.
 func Uint16ToStr(value uint16) string {
 	return strconv.FormatUint(uint64(value), 10)
 }
@@ -46,7 +46,7 @@ func Int32ToStr(value int32) string {
 	return strconv.FormatInt(int64(value), 10)
 }
 
-// Int32ToStr converts int32 to string.
+// Uint32ToStr converts int32 to string.
 func Uint32ToStr(value uint32) string {
 	return strconv.FormatUint(uint64(value), 10)
 }
@@ -194,7 +194,7 @@ func StrToBool(value string) (bool, error) {
 	return strconv.ParseBool(strings.ToLower(value))
 }
 
-// ToBase64 converts an input string to base64 string.
+// EncodeBase64 converts an input string to base64 string.
 func EncodeBase64(input string) string {
 	return base64.StdEncoding.EncodeToString([]byte(input))
 }
