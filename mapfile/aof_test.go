@@ -3,6 +3,7 @@ package mapfile_test
 import (
 	"github.com/hetianyi/gox/file"
 	"github.com/hetianyi/gox/logger"
+	"github.com/hetianyi/gox/mapfile"
 	"testing"
 )
 
@@ -11,6 +12,9 @@ func init() {
 }
 
 func TestInitAOF(t *testing.T) {
-	out, _ := file.CreateFile("D:\\tmp\\godfs\\aof")
-
+	a, err := mapfile.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
+	if err != nil {
+		logger.Fatal(err)
+	}
+	a.Write("11111")
 }
