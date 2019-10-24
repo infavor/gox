@@ -96,6 +96,16 @@ func (a *AppendFile) init() (err error) {
 	return nil
 }
 
+func (a *AppendFile) ApplyAddress() (int64, error) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	if err := a.extend(nil); err != nil {
+		return -1, err
+	}
+	return a.curOffset, nil
+}
+
 func (a *AppendFile) Write(data []byte, offset int64) (int64, error) {
 	a.lock.Lock()
 	defer func() {
@@ -169,7 +179,7 @@ func (a *AppendFile) append(blockHeadOffset int64) (int64, error) {
 	}
 
 	// block has no space , extends file.
-	a.bufferSlot[(len(a.bufferSlot) - 9)] = 1
+	/*a.bufferSlot[(len(a.bufferSlot) - 9)] = 1
 	tail := make([]byte, a.logSize*a.step+a.step+9-a.logSize-1)
 	data := append(a.bufferSlot[0:(len(a.bufferSlot)-8)], tail...)
 	if _, err := a.out.Write(data); err != nil {
@@ -181,7 +191,11 @@ func (a *AppendFile) append(blockHeadOffset int64) (int64, error) {
 		blockHeadOffset+int64((a.logSize+1)*a.step)); err != nil {
 		return -1, err
 	}
-	a.curOffset += int64((a.logSize+1)*a.step) + 9
+	a.curOffset += int64((a.logSize+1)*a.step) + 9*/
+
+	if err := a.extend(a.bufferSlot[0:(len(a.bufferSlot) - 8)]); err != nil {
+		return -1, err
+	}
 
 	// reset cache
 	if _, err := a.out.WriteAt(zeroByte, int64(len(a.bufferSlot)-1)); err != nil {
