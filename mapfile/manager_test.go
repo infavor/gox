@@ -3,7 +3,6 @@ package mapfile_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/hetianyi/gox/binlog"
 	"github.com/hetianyi/gox/file"
 	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/mapfile"
