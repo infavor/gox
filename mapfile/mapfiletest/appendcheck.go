@@ -96,7 +96,7 @@ func main() {
 	logger.Info("end writing")
 	logger.Info("start reading")
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < caseSize; i++ {
 		key := gox.Md5Sum(convert.IntToStr(i))
 		h := hashcode.HashCode(key)
 		index := (slotNum - 1) & int(h)
