@@ -74,11 +74,17 @@ func (a *AppendFile) init() (err error) {
 		}
 		a.in = i
 	}
-	fInfo, err := a.out.Stat()
+	fInfo, err := a.in.Stat()
 	if err != nil {
 		return err
 	}
-	a.curOffset = fInfo.Size()
+	if fInfo.Size() == 0 {
+		if err := a.extend(nil); err != nil {
+			return err
+		}
+	} else {
+		a.curOffset = fInfo.Size()
+	}
 	return nil
 }
 

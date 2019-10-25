@@ -2,10 +2,14 @@ package mapfile_test
 
 import (
 	"fmt"
+	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/mapfile"
+	"github.com/hetianyi/gox/timer"
+	"os"
 	"sync"
 	"testing"
+	"time"
 )
 
 func init() {
@@ -80,25 +84,37 @@ func TestInitAOFContains2(t *testing.T) {
 
 	logger.Info("start")
 
+	lock := new(sync.Mutex)
+	val := 0
+	inc := func() {
+		lock.Lock()
+		defer lock.Unlock()
+		val++
+		if val == 50000 {
+			logger.Info("finish")
+			os.Exit(0)
+		}
+	}
+
 	q := func() {
 		for i := 0; i < 1000; i++ {
 			_, err := a.Contains([]byte("11111"), addr)
 			if err != nil {
 				logger.Fatal(err)
 			}
+			inc()
 		}
 	}
-
-	var g = sync.WaitGroup{}
-	g.Add(5)
 
 	for i := 0; i < 50; i++ {
 		go q()
 	}
 
-	g.Wait()
-
 	logger.Info("end")
-	<-make(chan int)
+
+	timer.Start(0, time.Second, 0, func(t *timer.Timer) {
+		fmt.Println(val)
+	})
+	gox.BlockTest()
 	// 1000/22ms = 41/ms
 }

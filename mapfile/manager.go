@@ -3,10 +3,12 @@ package mapfile
 import (
 	"errors"
 	"github.com/hetianyi/gox/file"
-	"io"
 	"os"
 	"sync"
 )
+
+var valued = []byte{1}
+var empty = []byte{1}
 
 // FixedSizeFileMap is a fixed size file map.
 type FixedSizeFileMap struct {
@@ -57,7 +59,7 @@ func (m *FixedSizeFileMap) init() error {
 			if err != nil {
 				return err
 			}
-			_, err = io.ReadAtLeast(o, m.slotMap, m.slotNum)
+			_, err = o.ReadAt(m.slotMap, 0)
 			if err != nil {
 				return err
 			}
@@ -107,7 +109,7 @@ func (m *FixedSizeFileMap) Write(slotIndex int, data []byte) error {
 	}
 
 	if data == nil {
-		_, err := m.out.WriteAt([]byte{0}, int64(slotIndex))
+		_, err := m.out.WriteAt(empty, int64(slotIndex))
 		if err != nil {
 			return err
 		}
@@ -116,10 +118,11 @@ func (m *FixedSizeFileMap) Write(slotIndex int, data []byte) error {
 		if err != nil {
 			return err
 		}
-		_, err = m.out.WriteAt([]byte{1}, int64(slotIndex))
+		_, err = m.out.WriteAt(valued, int64(slotIndex))
 		if err != nil {
 			return err
 		}
+		m.slotMap[slotIndex] = 1
 	}
 	return nil
 }

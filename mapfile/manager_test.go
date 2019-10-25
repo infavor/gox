@@ -3,7 +3,10 @@ package mapfile_test
 import (
 	"bytes"
 	"fmt"
+	"github.com/hetianyi/gox"
+	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/file"
+	"github.com/hetianyi/gox/hash/hashcode"
 	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/mapfile"
 	"sync"
@@ -12,6 +15,15 @@ import (
 
 func init() {
 	logger.Init(nil)
+}
+
+func TestInitHashCode(t *testing.T) {
+	for i := 0; i < 10000; i++ {
+		key := gox.Md5Sum(convert.IntToStr(i))
+		h := hashcode.HashCode(key)
+		index := (10000 - 1) & int(h)
+		fmt.Println(index)
+	}
 }
 
 func TestInit(t *testing.T) {
