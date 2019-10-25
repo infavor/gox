@@ -18,6 +18,7 @@ type AppendFile struct {
 	bufferLock   *sync.Mutex
 	logSize      int
 	out          *os.File
+	in           *os.File
 	appendFile   string
 	step         int   // continuous space for every slot
 	curOffset    int64 // current write offset
@@ -66,6 +67,13 @@ func (a *AppendFile) init() (err error) {
 			a.out = o
 		}
 	}
+	if a.in == nil {
+		i, err := file.OpenFile(a.appendFile, os.O_RDONLY, 0666)
+		if err != nil {
+			return err
+		}
+		a.in = i
+	}
 	fInfo, err := a.out.Stat()
 	if err != nil {
 		return err
@@ -99,6 +107,27 @@ func (a *AppendFile) Write(data []byte, offset int64) error {
 	a.buffer.WriteByte(1)
 
 	return a.append(offset)
+}
+
+func (a *AppendFile) Contains(data []byte, offset int64) (bool, error) {
+	return a.read(data, offset)
+}
+
+func (a *AppendFile) read(data []byte, blockHeadOffset int64) (bool, error) {
+	stepBuff := make([]byte, (a.logSize+1)*a.step+9)
+	if _, err := a.out.ReadAt(stepBuff, blockHeadOffset); err != nil {
+		return false, err
+	}
+	for i := 0; i < a.step; i++ {
+		if stepBuff[(a.logSize+1)*i+a.logSize] == 1 &&
+			bytes.Equal(data, stepBuff[(a.logSize+1)*i:(a.logSize+1)*i+a.logSize]) {
+			return true, nil
+		}
+	}
+	if stepBuff[len(stepBuff)-1] == 0 {
+		return false, nil
+	}
+	return a.read(data, convert.Bytes2Length(stepBuff[len(stepBuff)-9:len(stepBuff)-1]))
 }
 
 func copy(target []byte, src []byte, offset int) {
