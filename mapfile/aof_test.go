@@ -49,7 +49,7 @@ func TestInitAOFContains(t *testing.T) {
 		logger.Fatal(err)
 	}
 	var addr int64 = 0
-	x, err := a.Contains([]byte("11111"), addr)
+	x, _, err := a.Contains([]byte("11111"), addr)
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestInitAOFContains1(t *testing.T) {
 
 	logger.Info("start")
 	for i := 0; i < 1000; i++ {
-		x, err := a.Contains([]byte("11111"), addr)
+		x, _, err := a.Contains([]byte("11111"), addr)
 		if err != nil {
 			logger.Fatal(err)
 		}
@@ -98,7 +98,7 @@ func TestInitAOFContains2(t *testing.T) {
 
 	q := func() {
 		for i := 0; i < 1000; i++ {
-			_, err := a.Contains([]byte("11111"), addr)
+			_, _, err := a.Contains([]byte("11111"), addr)
 			if err != nil {
 				logger.Fatal(err)
 			}

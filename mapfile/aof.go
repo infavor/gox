@@ -115,25 +115,26 @@ func (a *AppendFile) Write(data []byte, offset int64) error {
 	return a.append(offset)
 }
 
-func (a *AppendFile) Contains(data []byte, offset int64) (bool, error) {
-	return a.read(data, offset)
+func (a *AppendFile) Contains(data []byte, offset int64) (bool, int, error) {
+	return a.read(data, offset, 0)
 }
 
-func (a *AppendFile) read(data []byte, blockHeadOffset int64) (bool, error) {
+func (a *AppendFile) read(data []byte, blockHeadOffset int64, depth int) (bool, int, error) {
 	stepBuff := make([]byte, (a.logSize+1)*a.step+9)
 	if _, err := a.out.ReadAt(stepBuff, blockHeadOffset); err != nil {
-		return false, err
+		return false, 0, err
 	}
 	for i := 0; i < a.step; i++ {
+		depth++
 		if stepBuff[(a.logSize+1)*i+a.logSize] == 1 &&
 			bytes.Equal(data, stepBuff[(a.logSize+1)*i:(a.logSize+1)*i+a.logSize]) {
-			return true, nil
+			return true, depth, nil
 		}
 	}
 	if stepBuff[len(stepBuff)-1] == 0 {
-		return false, nil
+		return false, 0, nil
 	}
-	return a.read(data, convert.Bytes2Length(stepBuff[len(stepBuff)-9:len(stepBuff)-1]))
+	return a.read(data, convert.Bytes2Length(stepBuff[len(stepBuff)-9:len(stepBuff)-1]), depth)
 }
 
 func copy(target []byte, src []byte, offset int) {

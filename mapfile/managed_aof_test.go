@@ -90,7 +90,7 @@ func TestManagedAof(t *testing.T) {
 		}
 		l := convert.Bytes2Length(addr)
 
-		_, err = ao.Contains([]byte(key), l)
+		_, _, err = ao.Contains([]byte(key), l)
 		if err != nil {
 			logger.Fatal(err)
 		}
