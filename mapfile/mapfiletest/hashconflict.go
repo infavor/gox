@@ -1,24 +1,20 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/hash/hashcode"
 	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/mapfile"
 	"os"
 )
 
 func main() {
 	var (
-		manager  *mapfile.FixedSizeFileMap
-		ao       *mapfile.AppendFile
-		slotNum  int
-		slotSize int
+		slotNum  int // 16777216
 		caseSize int
-		depthMap = make(map[int]int)
+		hashs    = make(map[int]int)
+		slotMap  []byte
 	)
 
 	logger.Init(nil)
@@ -34,6 +30,7 @@ func main() {
 		logger.Fatal(err)
 	}
 	slotNum = _slotNum
+	slotMap = make([]byte, slotNum)
 
 	_caseSize, err := convert.StrToInt(cs)
 	if err != nil {
@@ -41,53 +38,26 @@ func main() {
 	}
 	caseSize = _caseSize
 
-	slotSize = 32
-
-	m, err := mapfile.NewFileMap(slotNum, 8, "index")
-	if err != nil {
-		logger.Fatal(err)
-	}
-	a, err := mapfile.NewAppendFile(slotSize, 2, "aof")
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	manager = m
-	ao = a
-
-	logger.Info("start reading")
+	logger.Info("start")
 
 	for i := 0; i < caseSize; i++ {
 		key := gox.Md5Sum(convert.IntToStr(i))
 		h := hashcode.HashCode(key)
 		h ^= h >> 16
 		index := (slotNum - 1) & int(h)
-		addr, err := manager.Read(index)
-		if err != nil {
-			logger.Fatal(err)
-		}
-		l := convert.Bytes2Length(addr)
-
-		_, dep, err := ao.Contains([]byte(key), l)
-		if err != nil {
-			logger.Fatal(err)
-		}
-		if dep > 5 {
-			depthMap[dep] = depthMap[dep] + 1
-		}
+		slotMap[index] = 1
+		hashs[index] = hashs[index] + 1
 	}
 
-	logger.Info("end reading")
+	logger.Info("end")
 
-	snapshot := manager.SlotSnapshot()
 	total := 0
-	for _, v := range snapshot {
+	for _, v := range slotMap {
 		total += int(v)
 	}
 
 	fmt.Println("empty slots: ", slotNum-total)
 	fmt.Println("slots usage: ", convert.Float64ToStr(float64(total) / float64(slotNum) * 100)[0:6]+"%")
-
-	ret, _ := json.MarshalIndent(depthMap, "", "    ")
-	fmt.Println(string(ret))
+	fmt.Println("unique hash: ", len(hashs))
+	fmt.Println("collision percent: ", convert.Float64ToStr(float64(caseSize-len(hashs))*100/float64(caseSize))+"%")
 }

@@ -59,6 +59,7 @@ func main() {
 	for i := 0; i < caseSize; i++ {
 		key := gox.Md5Sum(convert.IntToStr(i))
 		h := hashcode.HashCode(key)
+		h ^= h >> 16
 		index := (slotNum - 1) & int(h)
 		addr, err := manager.Read(index)
 		if err != nil {
