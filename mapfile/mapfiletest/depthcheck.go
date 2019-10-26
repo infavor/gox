@@ -75,6 +75,16 @@ func main() {
 	}
 
 	logger.Info("end reading")
+
+	snapshot := manager.SlotSnapshot()
+	total := 0
+	for _, v := range snapshot {
+		total += int(v)
+	}
+
+	fmt.Println("empty slots: ", slotNum-total)
+	fmt.Println("slots usage: ", convert.Float64ToStr(float64(slotNum-total) / float64(slotNum) * 100)[0:6]+"%")
+
 	ret, _ := json.MarshalIndent(depthMap, "", "    ")
 	fmt.Println(string(ret))
 }

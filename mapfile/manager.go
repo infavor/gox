@@ -69,6 +69,15 @@ func (m *FixedSizeFileMap) init() error {
 	return nil
 }
 
+func (m *FixedSizeFileMap) SlotSnapshot() []byte {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	s := make([]byte, len(m.slotMap))
+	copy(s, m.slotMap, 0)
+	return s
+}
+
 func (m *FixedSizeFileMap) lockSlot(slotIndex int) *sync.Mutex {
 	m.slotWriteLock.Lock()
 	defer m.slotWriteLock.Unlock()
