@@ -143,7 +143,7 @@ func (a *AppendFile) read(data []byte, blockHeadOffset int64, depth int) (bool, 
 	}
 	for i := 0; i < a.step; i++ {
 		depth++
-		if stepBuff[a.logSize*(i+1)] == 1 &&
+		if stepBuff[a.logSize*(i+1)+i] == 1 &&
 			bytes.Equal(data, stepBuff[(a.logSize+1)*i:(a.logSize+1)*i+a.logSize]) {
 			return true, depth, nil
 		}
@@ -214,7 +214,7 @@ func (a *AppendFile) append(blockHeadOffset int64) error {
 }
 
 func (a *AppendFile) delete(blockHeadOffset int64) (bool, error) {
-	if _, err := a.in.ReadAt(a.stepBuff, blockHeadOffset); err != nil {
+	if _, err := a.out.ReadAt(a.stepBuff, blockHeadOffset); err != nil {
 		return false, err
 	}
 	for i := 0; i < a.step; i++ {

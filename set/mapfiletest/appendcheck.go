@@ -11,12 +11,11 @@ import (
 
 func main() {
 	var (
-		manager       *set.FixedSizeFileMap
-		ao            *set.AppendFile
-		addressBuffer []byte
-		slotNum       int
-		slotSize      int
-		caseSize      int
+		manager  *set.FixedSizeFileMap
+		ao       *set.AppendFile
+		slotNum  int = 1 << 20
+		slotSize int
+		caseSize int
 	)
 
 	logger.Init(nil)
@@ -52,14 +51,14 @@ func main() {
 
 	manager = m
 	ao = a
-	addressBuffer = make([]byte, 8)
 
 	logger.Info("start writing")
 
 	for i := 0; i < caseSize; i++ {
+		addressBuffer1 := make([]byte, 8)
 		key := gox.Md5Sum(convert.IntToStr(i))
 		h := hashcode.HashCode(key)
-		h ^= h >> 16
+		h = h ^ (h >> 16)
 		index := (slotNum - 1) & int(h)
 		addr, err := manager.Read(index)
 		if err != nil {
@@ -74,14 +73,18 @@ func main() {
 			if err != nil {
 				logger.Fatal(err)
 			}
-			if err := manager.Write(index, convert.Length2Bytes(addr, addressBuffer)); err != nil {
+			if err := manager.Write(index, convert.Length2Bytes(addr, addressBuffer1)); err != nil {
 				logger.Fatal(err)
 			}
 			if err := ao.Write([]byte(key), addr); err != nil {
 				logger.Fatal(err)
 			}
-		} else {
 
+			x, _, err := ao.Contains([]byte(key), addr)
+			if !x || err != nil {
+				logger.Fatal("write failed: ", i, " :", err)
+			}
+		} else {
 			x, _, err := ao.Contains([]byte(key), l)
 			if err != nil {
 				logger.Fatal(err)
@@ -89,6 +92,10 @@ func main() {
 			if !x {
 				if err := ao.Write([]byte(key), l); err != nil {
 					logger.Fatal(err)
+				}
+				x, _, err := ao.Contains([]byte(key), l)
+				if !x || err != nil {
+					logger.Fatal("write failed: ", i, " :", err)
 				}
 			}
 		}
@@ -100,7 +107,7 @@ func main() {
 	for i := 0; i < caseSize; i++ {
 		key := gox.Md5Sum(convert.IntToStr(i))
 		h := hashcode.HashCode(key)
-		h ^= h >> 16
+		h = h ^ (h >> 16)
 		index := (slotNum - 1) & int(h)
 		addr, err := manager.Read(index)
 		if err != nil {
@@ -108,9 +115,12 @@ func main() {
 		}
 		l := convert.Bytes2Length(addr)
 
-		_, _, err = ao.Contains([]byte(key), l)
+		c, _, err := ao.Contains([]byte(key), l)
 		if err != nil {
 			logger.Fatal(err)
+		}
+		if !c {
+			logger.Fatal(c, " : ", key, ":", i)
 		}
 	}
 

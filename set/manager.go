@@ -78,6 +78,14 @@ func (m *FixedSizeFileMap) SlotSnapshot() []byte {
 	return s
 }
 
+func (m *FixedSizeFileMap) SlotNum() int {
+	return m.slotNum
+}
+
+func (m *FixedSizeFileMap) SlotSize() int {
+	return m.slotSize
+}
+
 func (m *FixedSizeFileMap) lockSlot(slotIndex int) *sync.Mutex {
 	m.slotWriteLock.Lock()
 	defer m.slotWriteLock.Unlock()
@@ -89,21 +97,26 @@ func (m *FixedSizeFileMap) lockSlot(slotIndex int) *sync.Mutex {
 	return lo
 }
 
+func (m *FixedSizeFileMap) unlockSlot(slotIndex int) {
+	m.slotWriteLock.Lock()
+	defer m.slotWriteLock.Unlock()
+	lo := m.slotLockMap[slotIndex]
+	if lo != nil {
+		lo.Unlock()
+		delete(m.slotLockMap, slotIndex)
+	}
+}
+
 // Write writes data in a slot.
 //
 //  slotIndex begin from 0,
 //  data is slot data.
 func (m *FixedSizeFileMap) Write(slotIndex int, data []byte) error {
 	m.lock.Lock()
-	lo := m.lockSlot(slotIndex)
-	if lo != nil {
-		lo.Lock()
-	}
+	m.lockSlot(slotIndex).Lock()
+
 	defer func() {
-		if lo != nil {
-			delete(m.slotLockMap, slotIndex)
-			lo.Unlock()
-		}
+		m.unlockSlot(slotIndex)
 		m.lock.Unlock()
 	}()
 
@@ -134,15 +147,9 @@ func (m *FixedSizeFileMap) Write(slotIndex int, data []byte) error {
 //  slotIndex begin from 0,
 func (m *FixedSizeFileMap) Delete(slotIndex int) error {
 	m.lock.Lock()
-	lo := m.lockSlot(slotIndex)
-	if lo != nil {
-		lo.Lock()
-	}
+	m.lockSlot(slotIndex).Lock()
 	defer func() {
-		if lo != nil {
-			delete(m.slotLockMap, slotIndex)
-			lo.Unlock()
-		}
+		m.unlockSlot(slotIndex)
 		m.lock.Unlock()
 	}()
 
@@ -163,14 +170,9 @@ func (m *FixedSizeFileMap) Delete(slotIndex int) error {
 
 // Read reads slot data from binlog file.
 func (m *FixedSizeFileMap) Read(slotIndex int) ([]byte, error) {
-	lo := m.lockSlot(slotIndex)
-	if lo != nil {
-		lo.Lock()
-	}
+	m.lockSlot(slotIndex).Lock()
 	defer func() {
-		if lo != nil {
-			lo.Unlock()
-		}
+		m.unlockSlot(slotIndex)
 	}()
 
 	if slotIndex < 0 || slotIndex >= m.slotNum {
