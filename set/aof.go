@@ -1,4 +1,4 @@
-package mapfile
+package set
 
 import (
 	"bytes"
@@ -26,6 +26,7 @@ type AppendFile struct {
 	applyLock    *sync.Mutex
 	oneByteArray []byte
 	buffer       *bytes.Buffer
+	stepBuff     []byte
 }
 
 func NewAppendFile(logSize, step int, appendFile string) (*AppendFile, error) {
@@ -39,6 +40,7 @@ func NewAppendFile(logSize, step int, appendFile string) (*AppendFile, error) {
 		step:         step,
 		appendFile:   appendFile,
 		buffer:       new(bytes.Buffer),
+		stepBuff:     make([]byte, (logSize+1)*step+9),
 	}
 	return r, r.init()
 }
@@ -115,6 +117,21 @@ func (a *AppendFile) Write(data []byte, offset int64) error {
 	return a.append(offset)
 }
 
+func (a *AppendFile) Delete(data []byte, offset int64) (bool, error) {
+	a.writeLock.Lock()
+	defer func() {
+		a.buffer.Reset()
+		a.writeLock.Unlock()
+	}()
+
+	if len(data) != a.logSize {
+		return false, errors.New("data does not match log size")
+	}
+	a.buffer.Write(data)
+	a.buffer.WriteByte(1)
+	return a.delete(offset)
+}
+
 func (a *AppendFile) Contains(data []byte, offset int64) (bool, int, error) {
 	return a.read(data, offset, 0)
 }
@@ -126,7 +143,7 @@ func (a *AppendFile) read(data []byte, blockHeadOffset int64, depth int) (bool, 
 	}
 	for i := 0; i < a.step; i++ {
 		depth++
-		if stepBuff[(a.logSize+1)*i+a.logSize] == 1 &&
+		if stepBuff[a.logSize*(i+1)] == 1 &&
 			bytes.Equal(data, stepBuff[(a.logSize+1)*i:(a.logSize+1)*i+a.logSize]) {
 			return true, depth, nil
 		}
@@ -194,6 +211,27 @@ func (a *AppendFile) append(blockHeadOffset int64) error {
 		return err
 	}
 	return a.append(addr)
+}
+
+func (a *AppendFile) delete(blockHeadOffset int64) (bool, error) {
+	if _, err := a.in.ReadAt(a.stepBuff, blockHeadOffset); err != nil {
+		return false, err
+	}
+	for i := 0; i < a.step; i++ {
+		if a.stepBuff[a.logSize*(i+1)] == 1 &&
+			bytes.Equal(a.buffer.Bytes(), a.stepBuff[(a.logSize+1)*i:(a.logSize+1)*(i+1)]) {
+			if _, err := a.out.WriteAt(empty, blockHeadOffset+int64(a.logSize*(i+1))); err != nil {
+				return false, err
+			}
+			return true, nil
+		}
+	}
+	// valid address data, continue next block.
+	if a.stepBuff[len(a.stepBuff)-1] == 1 {
+		nextBlockHeadOffset := convert.Bytes2Length(a.stepBuff[len(a.stepBuff)-9 : len(a.stepBuff)-1])
+		return a.delete(nextBlockHeadOffset)
+	}
+	return false, nil
 }
 
 func (a *AppendFile) readOneByte(offset int64) ([]byte, error) {

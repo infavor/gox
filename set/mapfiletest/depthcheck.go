@@ -7,14 +7,14 @@ import (
 	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/hash/hashcode"
 	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/mapfile"
+	"github.com/hetianyi/gox/set"
 	"os"
 )
 
 func main() {
 	var (
-		manager  *mapfile.FixedSizeFileMap
-		ao       *mapfile.AppendFile
+		manager  *set.FixedSizeFileMap
+		ao       *set.AppendFile
 		slotNum  int
 		slotSize int
 		caseSize int
@@ -43,11 +43,11 @@ func main() {
 
 	slotSize = 32
 
-	m, err := mapfile.NewFileMap(slotNum, 8, "index")
+	m, err := set.NewFileMap(slotNum, 8, "index")
 	if err != nil {
 		logger.Fatal(err)
 	}
-	a, err := mapfile.NewAppendFile(slotSize, 2, "aof")
+	a, err := set.NewAppendFile(slotSize, 2, "aof")
 	if err != nil {
 		logger.Fatal(err)
 	}

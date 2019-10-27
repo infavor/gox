@@ -1,4 +1,4 @@
-package mapfile_test
+package set_test
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"github.com/hetianyi/gox/file"
 	"github.com/hetianyi/gox/hash/hashcode"
 	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/mapfile"
+	"github.com/hetianyi/gox/set"
 	"sync"
 	"testing"
 )
@@ -51,7 +51,7 @@ func TestLock(t *testing.T) {
 func TestManagerWrite(t *testing.T) {
 	b := 1 << 20
 	ss := 8
-	manager, err := mapfile.NewFileMap(b, ss, "D:\\tmp\\godfs\\block")
+	manager, err := set.NewFileMap(b, ss, "D:\\tmp\\godfs\\block")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestManagerWrite(t *testing.T) {
 func TestManagerRead(t *testing.T) {
 	b := 1 << 20
 	ss := 8
-	manager, err := mapfile.NewFileMap(b, ss, "D:\\tmp\\godfs\\block")
+	manager, err := set.NewFileMap(b, ss, "D:\\tmp\\godfs\\block")
 	if err != nil {
 		logger.Fatal(err)
 	}

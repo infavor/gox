@@ -1,4 +1,4 @@
-package mapfile
+package set
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 )
 
 var valued = []byte{1}
-var empty = []byte{1}
+var empty = []byte{0}
 
 // FixedSizeFileMap is a fixed size file map.
 type FixedSizeFileMap struct {
@@ -117,22 +117,47 @@ func (m *FixedSizeFileMap) Write(slotIndex int, data []byte) error {
 		return errors.New("data size mismatch the slot size")
 	}
 
-	if data == nil {
-		_, err := m.out.WriteAt(empty, int64(slotIndex))
-		if err != nil {
-			return err
-		}
-	} else {
-		_, err := m.out.WriteAt(data, int64(m.slotNum)+int64((slotIndex)*m.slotSize))
-		if err != nil {
-			return err
-		}
-		_, err = m.out.WriteAt(valued, int64(slotIndex))
-		if err != nil {
-			return err
-		}
-		m.slotMap[slotIndex] = 1
+	_, err := m.out.WriteAt(data, int64(m.slotNum)+int64((slotIndex)*m.slotSize))
+	if err != nil {
+		return err
 	}
+	_, err = m.out.WriteAt(valued, int64(slotIndex))
+	if err != nil {
+		return err
+	}
+	m.slotMap[slotIndex] = 1
+	return nil
+}
+
+// Delete deletes data of a slot.
+//
+//  slotIndex begin from 0,
+func (m *FixedSizeFileMap) Delete(slotIndex int) error {
+	m.lock.Lock()
+	lo := m.lockSlot(slotIndex)
+	if lo != nil {
+		lo.Lock()
+	}
+	defer func() {
+		if lo != nil {
+			delete(m.slotLockMap, slotIndex)
+			lo.Unlock()
+		}
+		m.lock.Unlock()
+	}()
+
+	if slotIndex < 0 || slotIndex >= m.slotNum {
+		return errors.New("index of out range")
+	}
+	if m.slotMap[slotIndex] == 0 {
+		return nil
+	}
+
+	_, err := m.out.WriteAt(empty, int64(slotIndex))
+	if err != nil {
+		return err
+	}
+	m.slotMap[slotIndex] = 0
 	return nil
 }
 

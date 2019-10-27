@@ -1,10 +1,10 @@
-package mapfile_test
+package set_test
 
 import (
 	"fmt"
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/mapfile"
+	"github.com/hetianyi/gox/set"
 	"github.com/hetianyi/gox/timer"
 	"os"
 	"sync"
@@ -17,7 +17,7 @@ func init() {
 }
 
 func TestInitAOF(t *testing.T) {
-	a, err := mapfile.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
+	a, err := set.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestInitAOF(t *testing.T) {
 }
 
 func TestInitAOFSameSlot(t *testing.T) {
-	a, err := mapfile.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
+	a, err := set.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestInitAOFSameSlot(t *testing.T) {
 }
 
 func TestInitAOFContains(t *testing.T) {
-	a, err := mapfile.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
+	a, err := set.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestInitAOFContains(t *testing.T) {
 }
 
 func TestInitAOFContains1(t *testing.T) {
-	a, err := mapfile.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
+	a, err := set.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestInitAOFContains1(t *testing.T) {
 }
 
 func TestInitAOFContains2(t *testing.T) {
-	a, err := mapfile.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
+	a, err := set.NewAppendFile(5, 1, "D:\\tmp\\godfs\\aof")
 	if err != nil {
 		logger.Fatal(err)
 	}

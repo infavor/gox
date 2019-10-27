@@ -1,28 +1,51 @@
-package mapfile_test
+package main
 
 import (
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/hash/hashcode"
 	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/mapfile"
-	"testing"
+	"github.com/hetianyi/gox/set"
+	"os"
 )
 
-var (
-	manager       *mapfile.FixedSizeFileMap
-	ao            *mapfile.AppendFile
-	addressBuffer []byte
-	slotNum       = 1 << 20
-)
+func main() {
+	var (
+		manager       *set.FixedSizeFileMap
+		ao            *set.AppendFile
+		addressBuffer []byte
+		slotNum       int
+		slotSize      int
+		caseSize      int
+	)
 
-func init() {
-	ss := 8
-	m, err := mapfile.NewFileMap(slotNum, ss, "C:\\k8s\\godfs\\manager")
+	logger.Init(nil)
+
+	if len(os.Args) < 3 {
+		logger.Fatal("Usage: ./<app> <slotNum> <caseSize>")
+	}
+	sn := os.Args[1]
+	cs := os.Args[2]
+
+	_slotNum, err := convert.StrToInt(sn)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	a, err := mapfile.NewAppendFile(32, 2, "C:\\k8s\\godfs\\aof")
+	slotNum = _slotNum
+
+	_caseSize, err := convert.StrToInt(cs)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	caseSize = _caseSize
+
+	slotSize = 32
+
+	m, err := set.NewFileMap(slotNum, 8, "index")
+	if err != nil {
+		logger.Fatal(err)
+	}
+	a, err := set.NewAppendFile(slotSize, 2, "aof")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -30,25 +53,13 @@ func init() {
 	manager = m
 	ao = a
 	addressBuffer = make([]byte, 8)
-}
 
-// --------------
-//  write 52973 ms
-//  1000000
-//  18.878/ms
-//  18878/s
-// --------------
-//  read 23412 ms
-//  1000000
-//  42.713/ms
-//  42713/s
-func TestManagedAof(t *testing.T) {
+	logger.Info("start writing")
 
-	logger.Info("start write")
-
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < caseSize; i++ {
 		key := gox.Md5Sum(convert.IntToStr(i))
 		h := hashcode.HashCode(key)
+		h ^= h >> 16
 		index := (slotNum - 1) & int(h)
 		addr, err := manager.Read(index)
 		if err != nil {
@@ -70,19 +81,26 @@ func TestManagedAof(t *testing.T) {
 				logger.Fatal(err)
 			}
 		} else {
-			if err := ao.Write([]byte(key), l); err != nil {
+
+			x, _, err := ao.Contains([]byte(key), l)
+			if err != nil {
 				logger.Fatal(err)
+			}
+			if !x {
+				if err := ao.Write([]byte(key), l); err != nil {
+					logger.Fatal(err)
+				}
 			}
 		}
 	}
 
-	logger.Info("end write")
+	logger.Info("end writing")
+	logger.Info("start reading")
 
-	//fmt.Println("xxxxxxxxxxx")
-
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < caseSize; i++ {
 		key := gox.Md5Sum(convert.IntToStr(i))
 		h := hashcode.HashCode(key)
+		h ^= h >> 16
 		index := (slotNum - 1) & int(h)
 		addr, err := manager.Read(index)
 		if err != nil {
@@ -94,8 +112,8 @@ func TestManagedAof(t *testing.T) {
 		if err != nil {
 			logger.Fatal(err)
 		}
-		//fmt.Println(c)
 	}
 
-	logger.Info("end read")
+	logger.Info("end reading")
+
 }
