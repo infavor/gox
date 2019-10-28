@@ -16,14 +16,12 @@ func main() {
 	var (
 		manager  *set.FixedSizeFileMap
 		ao       *set.AppendFile
-		slotNum  int
+		slotNum  int = 1 << 24
 		slotSize int
 		caseSize int
 	)
 
-	slotNum = 1 << 20
-
-	caseSize = 500000
+	caseSize = 10000000
 
 	slotSize = 32
 	m, err := set.NewFileMap(slotNum, 8, "index")
