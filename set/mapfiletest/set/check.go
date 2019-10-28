@@ -18,7 +18,6 @@ func main() {
 		manager  *set.FixedSizeFileMap
 		ao       *set.AppendFile
 		slotNum  int = 1 << 24
-		hashs        = make(map[int]int)
 		slotSize int
 		caseSize int
 	)
@@ -50,8 +49,6 @@ func main() {
 		if !c {
 			logger.Fatal("check failed:", i)
 		}
-		index := getIndex(m, []byte(key))
-		hashs[index] = hashs[index] + 1
 	}
 
 	logger.Info("end reading")
@@ -62,8 +59,6 @@ func main() {
 
 	fmt.Println("empty slots: ", slotNum-total)
 	fmt.Println("slots usage: ", convert.Float64ToStr(float64(total) / float64(slotNum) * 100)[0:6]+"%")
-	fmt.Println("unique hash: ", len(hashs))
-	fmt.Println("collision percent: ", convert.Float64ToStr(float64(caseSize-len(hashs))*100/float64(caseSize))+"%")
 }
 
 func getIndex(manager *set.FixedSizeFileMap, data []byte) int {
