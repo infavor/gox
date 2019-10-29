@@ -23,7 +23,7 @@ func main() {
 
 	caseSize = 10000000
 
-	slotSize = 32
+	slotSize = 32 * 3
 	m, err := set.NewFileMap(slotNum, 8, "index")
 	if err != nil {
 		logger.Fatal(err)
@@ -47,6 +47,7 @@ func main() {
 		logger.Info("writing from ", start, " to ", end)
 		for k := start; k < end; k++ {
 			key := gox.Md5Sum(convert.IntToStr(k))
+			key = key + key + key
 			if err := set.Add([]byte(key)); err != nil {
 				logger.Fatal(err)
 			}

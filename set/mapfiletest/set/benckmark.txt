@@ -1,0 +1,39 @@
+
+Vultr 1G SSD 1 core:
+[root@centos set]# ./set
+[I] 2019-10-29 02:29:50,922 [set.go:65] start writing
+[I] 2019-10-29 02:29:50,922 [set.go:47] writing from 27000000 to 30000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 0 to 3000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 3000000 to 6000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 6000000 to 9000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 9000000 to 12000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 12000000 to 15000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 15000000 to 18000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 18000000 to 21000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 21000000 to 24000000
+[I] 2019-10-29 02:29:50,965 [set.go:47] writing from 24000000 to 27000000
+[I] 2019-10-29 03:07:49,888 [set.go:76] end writing
+[I] 2019-10-29 03:07:49,889 [set.go:77] 30000000
+
+1868649525 1.8G Oct 29 03:07 aof
+603979776 576M Oct 29 03:07 index
+
+write : 13,157/s
+
+[root@centos set]# ./check
+[I] 2019-10-29 03:13:24,172 [check.go:41] start reading
+[I] 2019-10-29 03:31:16,972 [check.go:54] end reading
+
+read : 27,777/s
+
+empty slots:  42918646
+slots usage:  36.046%
+
+total slots: 67108864
+case size  : 30000000
+empty slots: 42918646
+
+
+
+
+

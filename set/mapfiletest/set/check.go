@@ -24,7 +24,7 @@ func main() {
 
 	caseSize = 10000000
 
-	slotSize = 32
+	slotSize = 32 * 3
 	m, err := set.NewFileMap(slotNum, 8, "index")
 	if err != nil {
 		logger.Fatal(err)
