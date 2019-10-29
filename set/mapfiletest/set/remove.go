@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/hash/hashcode"
 	"github.com/hetianyi/gox/logger"
 	"github.com/hetianyi/gox/set"
 )
@@ -37,37 +36,27 @@ func main() {
 	manager = m
 	ao = a
 	set := set.NewDataSet(manager, ao)
-	loss := 0
 
-	logger.Info("start reading")
+	logger.Info("start remove")
 
 	for i := 0; i < caseSize; i++ {
 		key := gox.Md5Sum(convert.IntToStr(i))
 		key = key + key + key
-		c, err := set.Contains([]byte(key))
+		c, err := set.Remove([]byte(key))
 		if err != nil {
 			logger.Fatal(err)
 		}
 		if !c {
-			loss++
-			//logger.Fatal("check failed:", i)
+			logger.Error("delete failed:", c)
 		}
 	}
 
-	logger.Info("end reading")
+	logger.Info("end remove")
 	total := 0
 	for _, v := range manager.SlotSnapshot() {
 		total += int(v)
 	}
 
-	fmt.Println("empty slots : ", slotNum-total)
-	fmt.Println("check failed: ", loss)
-	fmt.Println("slots usage : ", convert.Float64ToStr(float64(total) / float64(slotNum) * 100)[0:6]+"%")
-}
-
-func getIndex(manager *set.FixedSizeFileMap, data []byte) int {
-	key := gox.Md5Sum(string(data))
-	h := hashcode.HashCode(key)
-	h = h ^ (h >> 16)
-	return (manager.SlotNum() - 1) & int(h)
+	fmt.Println("empty slots: ", slotNum-total)
+	fmt.Println("slots usage: ", convert.Float64ToStr(float64(total) / float64(slotNum) * 100)[0:6]+"%")
 }

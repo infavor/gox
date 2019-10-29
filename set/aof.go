@@ -218,9 +218,9 @@ func (a *AppendFile) delete(blockHeadOffset int64) (bool, error) {
 		return false, err
 	}
 	for i := 0; i < a.step; i++ {
-		if a.stepBuff[a.logSize*(i+1)] == 1 &&
+		if a.stepBuff[a.logSize*(i+1)+i] == 1 &&
 			bytes.Equal(a.buffer.Bytes(), a.stepBuff[(a.logSize+1)*i:(a.logSize+1)*(i+1)]) {
-			if _, err := a.out.WriteAt(empty, blockHeadOffset+int64(a.logSize*(i+1))); err != nil {
+			if _, err := a.out.WriteAt(empty, blockHeadOffset+int64(a.logSize*(i+1)+i)); err != nil {
 				return false, err
 			}
 			return true, nil
