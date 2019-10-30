@@ -66,7 +66,7 @@ func (d *DataSet) Add(data []byte) error {
 		}
 		if !x {
 			if err := d.a.Write(data, l); err != nil {
-				logger.Info("add ", string(data))
+				// logger.Info("add ", string(data))
 				return err
 			}
 		}
