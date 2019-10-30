@@ -74,6 +74,28 @@ func (d *DataSet) Add(data []byte) error {
 	return nil
 }
 
+// Remove
+func (d *DataSet) Remove(data []byte) (bool, error) {
+	d.writeLock.Lock()
+	defer d.writeLock.Unlock()
+
+	index := d.getIndex(data)
+
+	addr, err := d.m.Read(index)
+	if err != nil {
+		return false, err
+	}
+	var l int64 = 0
+	if addr != nil {
+		l = convert.Bytes2Length(addr)
+	}
+	if l == 0 {
+		return false, nil
+	} else {
+		return d.a.Delete(data, l)
+	}
+}
+
 func (d *DataSet) Contains(data []byte) (bool, error) {
 	addr, err := d.m.Read(d.getIndex(data))
 	if err != nil {
