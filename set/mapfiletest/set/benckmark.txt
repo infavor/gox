@@ -1,5 +1,5 @@
 
-Vultr 1G SSD 1 core:
+Vultr 1G SSD 1 core 32bit:
 [root@centos set]# ./set
 [I] 2019-10-29 02:29:50,922 [set.go:65] start writing
 [I] 2019-10-29 02:29:50,922 [set.go:47] writing from 27000000 to 30000000
@@ -36,4 +36,38 @@ empty slots: 42918646
 
 
 
+Vultr 1G SSD 1 core 96bit:
+[root@centos set]# ./set
+[I] 2019-10-29 06:03:04,921 [set.go:66] start writing
+[I] 2019-10-29 06:03:04,921 [set.go:47] writing from 9000000 to 10000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 0 to 1000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 1000000 to 2000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 2000000 to 3000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 3000000 to 4000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 4000000 to 5000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 5000000 to 6000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 6000000 to 7000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 7000000 to 8000000
+[I] 2019-10-29 06:03:05,041 [set.go:47] writing from 8000000 to 9000000
+[I] 2019-10-29 06:08:09,772 [set.go:77] end writing
+[I] 2019-10-29 06:08:09,772 [set.go:78] 10000000
 
+
+1.5G Oct 29 06:08 aof
+
+
+
+[root@centos set]# ./set
+[I] 2019-10-29 06:33:03,372 [set.go:66] start writing
+[I] 2019-10-29 06:33:03,372 [set.go:47] writing from 27000000 to 30000000
+[I] 2019-10-29 06:33:03,459 [set.go:47] writing from 0 to 3000000
+[I] 2019-10-29 06:33:03,470 [set.go:47] writing from 3000000 to 6000000
+[I] 2019-10-29 06:33:03,471 [set.go:47] writing from 6000000 to 9000000
+[I] 2019-10-29 06:33:03,471 [set.go:47] writing from 9000000 to 12000000
+[I] 2019-10-29 06:33:03,471 [set.go:47] writing from 12000000 to 15000000
+[I] 2019-10-29 06:33:03,471 [set.go:47] writing from 15000000 to 18000000
+[I] 2019-10-29 06:33:03,471 [set.go:47] writing from 18000000 to 21000000
+[I] 2019-10-29 06:33:03,471 [set.go:47] writing from 21000000 to 24000000
+[I] 2019-10-29 06:33:03,471 [set.go:47] writing from 24000000 to 27000000
+[I] 2019-10-29 07:07:58,571 [set.go:77] end writing
+[I] 2019-10-29 07:07:58,571 [set.go:78] 30000000
