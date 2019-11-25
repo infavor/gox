@@ -4,7 +4,6 @@ import (
 	"github.com/hetianyi/gox"
 	"github.com/hetianyi/gox/convert"
 	"github.com/hetianyi/gox/hash/hashcode"
-	"github.com/hetianyi/gox/logger"
 	"sync"
 )
 
