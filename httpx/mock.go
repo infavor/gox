@@ -241,7 +241,7 @@ func (m *mock) Do() (interface{}, int, error) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return m.responseContainer, 0, err
+		return m.responseContainer, resp.StatusCode, err
 	}
 
 	if !m.isSuccess(resp.StatusCode) {
@@ -268,25 +268,17 @@ func (m *mock) Do() (interface{}, int, error) {
 			}
 		}
 	}
-	var body []byte
+	var r io.Reader
 	if decodeUseGzip {
 		reader, err := gzip.NewReader(resp.Body)
 		if err != nil {
 			return m.responseContainer, resp.StatusCode, err
 		}
-		bs, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return m.responseContainer, resp.StatusCode, err
-		}
-		body = bs
+		r = reader
 	} else {
-		bs, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return m.responseContainer, resp.StatusCode, err
-		}
-		body = bs
+		r = resp.Body
 	}
-	ret, err := convertResponse(checkResponseType(m.responseContainer), string(body), m.responseContainer)
+	ret, err := convertResponse(checkResponseType(m.responseContainer), r, m.responseContainer)
 	return ret, resp.StatusCode, err
 }
 
@@ -395,30 +387,63 @@ func checkResponseType(resp interface{}) string {
 }
 
 // convertResponse converts response to the type of response.
-func convertResponse(typeName string, response string, responseContainer interface{}) (interface{}, error) {
+func convertResponse(typeName string, response io.Reader, responseContainer interface{}) (interface{}, error) {
 	switch typeName {
 	case "nil":
-		return response, nil
+		bs, err := ioutil.ReadAll(response)
+		return string(bs), err
 	case "io.Writer":
-		(responseContainer.(io.Writer)).Write([]byte(response))
+		io.Copy(responseContainer.(io.Writer), response)
 		return response, nil
 	case "int":
-		return convert.StrToInt(response)
+		bs, err := ioutil.ReadAll(response)
+		if err != nil {
+			return 0, err
+		}
+		return convert.StrToInt(string(bs))
 	case "int64":
-		return convert.StrToInt64(response)
+		bs, err := ioutil.ReadAll(response)
+		if err != nil {
+			return 0, err
+		}
+		return convert.StrToInt64(string(bs))
 	case "float32":
-		return convert.StrToFloat32(response)
+		bs, err := ioutil.ReadAll(response)
+		if err != nil {
+			return 0, err
+		}
+		return convert.StrToFloat32(string(bs))
 	case "float64":
-		return convert.StrToFloat64(response)
+		bs, err := ioutil.ReadAll(response)
+		if err != nil {
+			return 0, err
+		}
+		return convert.StrToFloat64(string(bs))
 	case "bool":
-		return convert.StrToBool(response)
+		bs, err := ioutil.ReadAll(response)
+		if err != nil {
+			return 0, err
+		}
+		return convert.StrToBool(string(bs))
 	case "string":
-		return response, nil
+		bs, err := ioutil.ReadAll(response)
+		if err != nil {
+			return 0, err
+		}
+		return string(bs), nil
 	case "map":
-		err := json.UnmarshalFromString(response, responseContainer)
+		bs, err := ioutil.ReadAll(response)
+		if err != nil {
+			return 0, err
+		}
+		err = json.Unmarshal(bs, responseContainer)
 		return responseContainer, err
 	case "struct":
-		err := json.UnmarshalFromString(response, responseContainer)
+		bs, err := ioutil.ReadAll(response)
+		if err != nil {
+			return 0, err
+		}
+		err = json.Unmarshal(bs, responseContainer)
 		return responseContainer, err
 	}
 	return nil, errors.New("cannot convert response")

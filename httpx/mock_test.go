@@ -127,13 +127,13 @@ func TestMockPost2(t *testing.T) {
 }
 
 func TestMockPost3(t *testing.T) {
-	out, err := file.CreateFile("D:\\tmp\\response.pdf")
+	out, err := file.CreateFile("D:\\tmp\\轻松一刻语音版-所谓塑料同事-下班缘分就尽了.mp3")
 	if err != nil {
 		logger.Fatal(err)
 	}
 	defer out.Close()
 	logger.Info("start ", time.Now().UTC())
-	result, _, err := httpx.Mock().URL("https://doctool.cbim.org.cn/docgen/warehouse/2631c7fca887dc9c097188b40232f1e8.pdf?filename=%E4%B8%AD%E5%9B%BD%E5%86%9C%E4%B8%9A%E7%A7%91%E6%8A%80%E5%9B%BD%E9%99%85%E4%BA%A4%E6%B5%81%E4%B8%AD%E5%BF%83.pdf").
+	result, _, err := httpx.Mock().URL("http://mobilepics.ws.126.net/UIg9y7iEZIrCxoikpo3HeNeikjLMqkV7%3D%3DFTRPUTL6.mp3").
 		Get().
 		Success(out).Error(func(status int, response []byte) {
 		logger.Error("status ", status, ", response: ", string(response))
