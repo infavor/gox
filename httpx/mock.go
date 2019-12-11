@@ -241,7 +241,7 @@ func (m *mock) Do() (interface{}, int, error) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return m.responseContainer, resp.StatusCode, err
+		return m.responseContainer, 0, err
 	}
 
 	if !m.isSuccess(resp.StatusCode) {
