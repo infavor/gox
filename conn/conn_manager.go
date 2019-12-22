@@ -2,6 +2,7 @@ package conn
 
 import (
 	"net"
+	"sync"
 	"time"
 )
 
@@ -10,6 +11,7 @@ var (
 	config                 map[string]uint       // config is a settings which stores each server's max connection size.
 	defaultMaxConn         uint             = 50 // default max connection size.
 	defaultMaxConnIdleTime                  = time.Minute * 5
+	lock                                    = new(sync.Mutex) // sync lock
 )
 
 func init() {
@@ -30,8 +32,11 @@ func SetDefaultMaxConnIdleTime(connMaxIdleTime time.Duration) {
 // InitServerSettings initializes settings of a server.
 // It is better way that initialize a server settings before getting connections from it's pool.
 func InitServerSettings(server Server, maxConn uint, connMaxIdleTime time.Duration) {
+	lock.Lock()
+	defer lock.Unlock()
+
 	s := server.ConnectionString()
-	config[s] = maxConn
+	config[s] = maxConn // concurrent writes may cause panic here
 	if poolManager[s] == nil {
 		poolManager[s] = NewPool(maxConn, &ConnectionFactory{
 			Server:          server,

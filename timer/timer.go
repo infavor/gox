@@ -19,7 +19,7 @@ func (t *Timer) Destroy() {
 // Start starts a timer with parameters 'initialDelay', 'fixedDelay', 'fixedRate' and timer work,
 // It returns timer struct for controlling.
 func Start(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.Duration, work func(t *Timer)) *Timer {
-	logger.Debug("create timer")
+	// logger.Debug("create timer")
 	t := &Timer{
 		close: false,
 	}
@@ -35,9 +35,9 @@ func Start(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.
 //
 // Note that fixedDelay is superior than fixedRate.
 func (t *Timer) tick(initialDelay time.Duration, fixedDelay time.Duration, fixedRate time.Duration, work func(t *Timer)) {
-	logger.Debug("start timer")
+	// logger.Debug("start timer")
 	defer func() {
-		logger.Debug("stop timer")
+		// logger.Debug("stop timer")
 	}()
 	time.Sleep(initialDelay)
 	if t.close {
