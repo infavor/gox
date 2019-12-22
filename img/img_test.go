@@ -9,6 +9,8 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -277,4 +279,41 @@ func TestImage_DrawText(t *testing.T) {
 	out, _ := file.CreateFile("E:\\test\\TestImage_DrawText.jpg")
 
 	img.Save(im, out, imaging.JPEG)
+}
+
+func TestCompressDir(t *testing.T) {
+
+	filepath.Walk("C:\\spider\\test\\download", func(path string, info os.FileInfo, err error) error {
+
+		if info.IsDir() && info.Name() == "download" {
+			return nil
+		}
+		if info.IsDir() {
+			return file.CreateDirs("D:\\out\\" + info.Name())
+		}
+
+		if !info.IsDir() {
+
+			dirName := filepath.Base(filepath.Dir(path))
+
+			im, err := img.OpenLocalFile(path) // 1900x1283
+			if err != nil {
+				logger.Error(err)
+				return nil
+			}
+			x := im.GetSource().Bounds().Size().X
+			y := im.GetSource().Bounds().Size().Y
+
+			if x > y && x > 2000 {
+				im.Resize(2000, 0, imaging.Lanczos)
+				im.Compress(50)
+				imaging.Save(im.GetSource(), "D:\\out\\"+dirName+"\\"+info.Name())
+			} else {
+				im.Resize(0, 2000, imaging.Lanczos)
+				im.Compress(50)
+				imaging.Save(im.GetSource(), "D:\\out\\"+dirName+"\\"+info.Name())
+			}
+		}
+		return nil
+	})
 }
