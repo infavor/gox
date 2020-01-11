@@ -282,6 +282,81 @@ func (m *mock) Do() (interface{}, int, error) {
 	return ret, resp.StatusCode, err
 }
 
+// Do is the end of the mock chain,
+// which will send the request and return the result.
+func (m *mock) Do1() (interface{}, *http.Response, error) {
+	paramsStr := string(encodeParameters(m.parameterMap))
+
+	isMultipart := false
+	var mw *multipart.Writer
+	var pipeReader *io.PipeReader
+	var pipeWriter *io.PipeWriter
+	if m.multipartFiller != nil {
+		isMultipart = true
+		pipeReader, pipeWriter = io.Pipe()
+		mw = multipart.NewWriter(pipeWriter)
+		go func() {
+			defer pipeWriter.Close()
+			defer mw.Close()
+			m.multipartFiller(mw)
+		}()
+	}
+
+	req, err := http.NewRequest(m.method, gox.TValue(paramsStr == "", m.url, m.url+"?"+paramsStr).(string),
+		gox.TValue(isMultipart, pipeReader, bytes.NewReader(m.body)).(io.Reader))
+	if err != nil {
+		return m.responseContainer, nil, err
+	}
+	for k, v := range m.headers {
+		req.Header.Add(k, v)
+	}
+	if isMultipart {
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return m.responseContainer, nil, err
+	}
+
+	if !m.isSuccess(resp.StatusCode) {
+		bs, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return m.responseContainer, resp, err
+		}
+		if m.callback != nil {
+			m.callback(resp.StatusCode, bs)
+		}
+		return m.responseContainer, resp, nil
+	}
+	decodeUseGzip := false
+	if resp.Header != nil {
+		for k, v := range resp.Header {
+			// fmt.Println(k, v[0])
+			if strings.ToLower(k) == "content-encoding" {
+				if v != nil && len(v) > 0 {
+					if v[0] == "gzip" {
+						decodeUseGzip = true
+						break
+					}
+				}
+			}
+		}
+	}
+	var r io.Reader
+	if decodeUseGzip {
+		reader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			return m.responseContainer, resp, err
+		}
+		r = reader
+	} else {
+		r = resp.Body
+	}
+	ret, err := convertResponse(checkResponseType(m.responseContainer), r, m.responseContainer)
+	return ret, resp, err
+}
+
 // Get sets http method to GET.
 func (m *mock) Get() *mock {
 	m.method = METHOD_GET
