@@ -57,3 +57,16 @@ func consumer(q *queue.Queue) {
 		time.Sleep(time.Second)
 	}
 }
+
+func TestQueue_Put(t *testing.T) {
+	q := queue.NewNoneBlockQueue(2)
+	fmt.Println(q.Put(1))
+	fmt.Println(q.Put(1))
+	fmt.Println(q.Put(1))
+	fmt.Println(q.Fetch())
+	fmt.Println(q.Fetch())
+	fmt.Println(q.Fetch())
+	fmt.Println(q.Fetch())
+	fmt.Println(q.Put(1))
+	fmt.Println(q.Fetch())
+}
