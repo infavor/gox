@@ -81,3 +81,9 @@ func TestDES(t *testing.T) {
 	decryptedText, _ := DesDecryption(key, iv, bs)
 	fmt.Println(string(decryptedText))
 }
+
+func TestGetHumanReadableDuration(t *testing.T) {
+	createTime := gox.CreateTime(gox.GetTimestamp(time.Now()) - 420000)
+	fmt.Println(gox.GetHumanReadableDuration(createTime, time.Now()))
+	fmt.Println(gox.GetLongHumanReadableDuration(createTime, time.Now()))
+}

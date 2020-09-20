@@ -82,7 +82,7 @@ func GetTimestamp(t time.Time) int64 {
 // sec seconds and nsec nanoseconds since January 1, 1970 UTC. It is valid to pass nsec outside the range [0, 999999999].
 // Not all sec values have a corresponding time value. One such value is 1<<63-1 (the largest int64 value).
 func CreateTime(millis int64) time.Time {
-	return time.Unix(millis, 0)
+	return time.Unix(millis/1000, 0)
 }
 
 // GetNanosecond gets current timestamp in Nanosecond.
