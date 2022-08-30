@@ -2,8 +2,8 @@ package consulx_test
 
 import (
 	"github.com/hashicorp/consul/api"
-	"github.com/hetianyi/gox/consulx"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/consulx"
+	"github.com/infavor/gox/logger"
 	"testing"
 	"time"
 )

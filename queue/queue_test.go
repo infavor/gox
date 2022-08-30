@@ -2,7 +2,7 @@ package queue_test
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox/queue"
+	"github.com/infavor/gox/queue"
 	"testing"
 	"time"
 )

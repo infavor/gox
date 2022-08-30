@@ -6,9 +6,9 @@ import (
 	"crypto/des"
 	"encoding/base64"
 	"fmt"
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/convert"
+	"github.com/infavor/gox/logger"
 	"testing"
 	"time"
 )

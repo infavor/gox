@@ -3,7 +3,7 @@ package logger
 import (
 	"bytes"
 	"fmt"
-	"github.com/hetianyi/gox"
+	"github.com/infavor/gox"
 	. "github.com/logrusorgru/aurora"
 	"github.com/sirupsen/logrus"
 	"strings"

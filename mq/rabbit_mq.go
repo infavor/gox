@@ -3,8 +3,8 @@ package mq
 import (
 	"errors"
 	"fmt"
-	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/uuid"
+	"github.com/infavor/gox/logger"
+	"github.com/infavor/gox/uuid"
 	"github.com/streadway/amqp"
 	"sync"
 	"time"

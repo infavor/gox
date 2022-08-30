@@ -5,10 +5,10 @@ package hashmap
 
 import (
 	"errors"
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/hash/hashcode"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/convert"
+	"github.com/infavor/gox/hash/hashcode"
+	"github.com/infavor/gox/logger"
 	"math"
 	"sync"
 )

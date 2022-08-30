@@ -3,7 +3,7 @@ package hashcode
 
 import (
 	"errors"
-	"github.com/hetianyi/gox"
+	"github.com/infavor/gox"
 	"math"
 	"reflect"
 )

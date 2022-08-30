@@ -1,9 +1,9 @@
 package set
 
 import (
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/hash/hashcode"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/convert"
+	"github.com/infavor/gox/hash/hashcode"
 	"sync"
 )
 

@@ -2,9 +2,9 @@ package httpx_test
 
 import (
 	"encoding/json"
-	"github.com/hetianyi/gox/file"
-	"github.com/hetianyi/gox/httpx"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/file"
+	"github.com/infavor/gox/httpx"
+	"github.com/infavor/gox/logger"
 	"io"
 	"io/ioutil"
 	"mime/multipart"

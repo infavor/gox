@@ -3,7 +3,7 @@ package ws
 import (
 	"errors"
 	"github.com/gorilla/websocket"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/logger"
 	"net/http"
 )
 

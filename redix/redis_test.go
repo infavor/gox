@@ -1,9 +1,9 @@
 package redix_test
 
 import (
-	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/redix"
-	"github.com/hetianyi/gox/uuid"
+	"github.com/infavor/gox/logger"
+	"github.com/infavor/gox/redix"
+	"github.com/infavor/gox/uuid"
 	"testing"
 	"time"
 )

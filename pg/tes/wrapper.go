@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/hetianyi/gox/file"
-	"github.com/hetianyi/gox/pg"
+	"github.com/infavor/gox/file"
+	"github.com/infavor/gox/pg"
 	"io"
 )
 

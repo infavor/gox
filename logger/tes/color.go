@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/logger"
 )
 
 func main() {

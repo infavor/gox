@@ -3,8 +3,8 @@ package ws_test
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/ws"
+	"github.com/infavor/gox/logger"
+	"github.com/infavor/gox/ws"
 	"net/http"
 	"testing"
 	"time"

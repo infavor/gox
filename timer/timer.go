@@ -1,8 +1,8 @@
 package timer
 
 import (
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/logger"
 	"time"
 )
 

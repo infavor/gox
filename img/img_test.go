@@ -2,10 +2,10 @@ package img_test
 
 import (
 	"github.com/disintegration/imaging"
-	"github.com/hetianyi/gox/file"
-	"github.com/hetianyi/gox/fontx"
-	"github.com/hetianyi/gox/img"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/file"
+	"github.com/infavor/gox/fontx"
+	"github.com/infavor/gox/img"
+	"github.com/infavor/gox/logger"
 	"image"
 	"image/color"
 	"log"

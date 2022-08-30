@@ -1,5 +1,5 @@
 # gox
-[![go report card](https://goreportcard.com/badge/github.com/hetianyi/gox)](https://goreportcard.com/report/github.com/hetianyi/gox)
+[![go report card](https://goreportcard.com/badge/github.com/infavor/gox)](https://goreportcard.com/report/github.com/infavor/gox)
 
 gox is a go library integrated with many useful tools.
 

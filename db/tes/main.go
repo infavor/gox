@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox/db"
-	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/uuid"
+	"github.com/infavor/gox/db"
+	"github.com/infavor/gox/logger"
+	"github.com/infavor/gox/uuid"
 	"github.com/jinzhu/gorm"
 	"time"
 )

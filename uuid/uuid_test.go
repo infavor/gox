@@ -2,7 +2,7 @@ package uuid_test
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox/uuid"
+	"github.com/infavor/gox/uuid"
 	"testing"
 )
 

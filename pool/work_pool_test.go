@@ -2,7 +2,7 @@ package pool_test
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox/pool"
+	"github.com/infavor/gox/pool"
 	"testing"
 )
 

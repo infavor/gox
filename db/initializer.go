@@ -2,7 +2,7 @@ package db
 
 import (
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/logger"
 	"github.com/jinzhu/gorm"
 	"time"
 )

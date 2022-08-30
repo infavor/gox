@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/golang/freetype"
-	"github.com/hetianyi/gox/img"
+	"github.com/infavor/gox/img"
 	"golang.org/x/image/font"
 	"image"
 	"image/draw"

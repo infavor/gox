@@ -2,7 +2,7 @@ package redix
 
 import (
 	"github.com/go-redis/redis"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/logger"
 	"time"
 )
 

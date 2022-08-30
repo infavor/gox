@@ -2,11 +2,11 @@ package set_test
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/hash/hashcode"
-	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/set"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/convert"
+	"github.com/infavor/gox/hash/hashcode"
+	"github.com/infavor/gox/logger"
+	"github.com/infavor/gox/set"
 	"os"
 	"testing"
 )

@@ -1,7 +1,7 @@
 package cache_test
 
 import (
-	"github.com/hetianyi/gox/cache"
+	"github.com/infavor/gox/cache"
 	"testing"
 	"time"
 )

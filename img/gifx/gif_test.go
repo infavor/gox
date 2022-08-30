@@ -2,10 +2,10 @@ package gifx_test
 
 import (
 	"github.com/disintegration/imaging"
-	"github.com/hetianyi/gox/file"
-	"github.com/hetianyi/gox/img"
-	"github.com/hetianyi/gox/img/gifx"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/file"
+	"github.com/infavor/gox/img"
+	"github.com/infavor/gox/img/gifx"
+	"github.com/infavor/gox/logger"
 	"image/gif"
 	"testing"
 )

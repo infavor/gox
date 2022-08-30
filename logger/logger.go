@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/file"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/convert"
+	"github.com/infavor/gox/file"
 	. "github.com/logrusorgru/aurora"
 	"github.com/mattn/go-colorable"
 	"github.com/mholt/archiver"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/logger"
 	"github.com/mattn/go-colorable"
 	"github.com/sirupsen/logrus"
 )

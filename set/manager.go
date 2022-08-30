@@ -2,7 +2,7 @@ package set
 
 import (
 	"errors"
-	"github.com/hetianyi/gox/file"
+	"github.com/infavor/gox/file"
 	"os"
 	"sync"
 )

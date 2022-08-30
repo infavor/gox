@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hetianyi/gox/pg"
+	"github.com/infavor/gox/pg"
 	"time"
 )
 

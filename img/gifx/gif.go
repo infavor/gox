@@ -7,8 +7,8 @@ package gifx
 import (
 	"bytes"
 	"github.com/disintegration/imaging"
-	"github.com/hetianyi/gox/file"
-	"github.com/hetianyi/gox/img"
+	"github.com/infavor/gox/file"
+	"github.com/infavor/gox/img"
 	"image"
 	"image/draw"
 	"image/gif"

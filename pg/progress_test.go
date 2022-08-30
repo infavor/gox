@@ -3,7 +3,7 @@ package pg_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/hetianyi/gox/pg"
+	"github.com/infavor/gox/pg"
 	"math"
 	"os"
 	"testing"

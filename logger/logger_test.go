@@ -3,7 +3,7 @@ package logger_test
 import (
 	"testing"
 
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox/logger"
 	"github.com/logrusorgru/aurora"
 )
 

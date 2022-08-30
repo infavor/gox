@@ -3,8 +3,8 @@ package set
 import (
 	"bytes"
 	"errors"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/file"
+	"github.com/infavor/gox/convert"
+	"github.com/infavor/gox/file"
 	"os"
 	"sync"
 )

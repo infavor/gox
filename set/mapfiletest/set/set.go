@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/set"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/convert"
+	"github.com/infavor/gox/logger"
+	"github.com/infavor/gox/set"
 	"sync"
 )
 

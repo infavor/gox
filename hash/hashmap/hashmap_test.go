@@ -2,10 +2,10 @@ package hashmap_test
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/hash/hashmap"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/convert"
+	"github.com/infavor/gox/hash/hashmap"
+	"github.com/infavor/gox/logger"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -180,6 +180,6 @@ func TestInit(t *testing.T) {
 }
 
 func Test111(t *testing.T) {
-	fmt.Println(filepath.Base("D:/Hetianyi/svn/gox/logger/tes\\godfs-2019061911-part15.log"))
+	fmt.Println(filepath.Base("D:/infavor/svn/gox/logger/tes\\godfs-2019061911-part15.log"))
 	fmt.Println(filepath.Dir("godfs-2019061911-part15.log"))
 }

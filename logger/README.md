@@ -6,7 +6,7 @@ It is usually used in function init().
 Usage:
 
 ```golang
-import "github.com/hetianyi/gox/logger"
+import "github.com/infavor/gox/logger"
 
 func init() {
 	logger.Init()

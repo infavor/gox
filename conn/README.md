@@ -5,7 +5,7 @@ package conn manages connection pool for client side application.
 Usage:
 
 ```golang
-import "github.com/hetianyi/gox/conn"
+import "github.com/infavor/gox/conn"
 
 server := &conn.Server{
     Host: "127.0.0.1",

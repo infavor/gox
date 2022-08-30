@@ -7,7 +7,7 @@ package gpip
 import (
 	"encoding/json"
 	"errors"
-	"github.com/hetianyi/gox/convert"
+	"github.com/infavor/gox/convert"
 	"github.com/json-iterator/go"
 	"io"
 	"net"

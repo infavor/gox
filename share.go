@@ -8,7 +8,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"github.com/hetianyi/gox/convert"
+	"github.com/infavor/gox/convert"
 	"io"
 	"math/rand"
 	"net"

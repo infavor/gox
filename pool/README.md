@@ -6,7 +6,7 @@ its parallel number and maximum wait queue length.
 Usage:
 
 ```golang
-import "github.com/hetianyi/gox/pool"
+import "github.com/infavor/gox/pool"
 
 // init a task pool which allow 2 tasks run in parallel,
 // and max wait task count is 100.

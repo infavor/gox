@@ -2,10 +2,10 @@ package set_test
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/set"
-	"github.com/hetianyi/gox/timer"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/logger"
+	"github.com/infavor/gox/set"
+	"github.com/infavor/gox/timer"
 	"os"
 	"sync"
 	"testing"

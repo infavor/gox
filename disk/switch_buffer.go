@@ -2,8 +2,8 @@ package disk
 
 import (
 	"container/list"
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/logger"
+	"github.com/infavor/gox"
+	"github.com/infavor/gox/logger"
 	"sync"
 )
 

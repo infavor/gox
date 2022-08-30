@@ -1,9 +1,9 @@
 package mq_test
 
 import (
-	"github.com/hetianyi/gox/logger"
-	"github.com/hetianyi/gox/mq"
-	"github.com/hetianyi/gox/timer"
+	"github.com/infavor/gox/logger"
+	"github.com/infavor/gox/mq"
+	"github.com/infavor/gox/timer"
 	"github.com/streadway/amqp"
 	"testing"
 	"time"

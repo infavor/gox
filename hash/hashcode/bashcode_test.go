@@ -2,7 +2,7 @@ package hashcode_test
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox/hash/hashcode"
+	"github.com/infavor/gox/hash/hashcode"
 	"reflect"
 	"testing"
 )

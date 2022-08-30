@@ -5,7 +5,7 @@ package cache is bytes/interface cache manager.
 Usage:
 
 ```golang
-import "github.com/hetianyi/gox/cache"
+import "github.com/infavor/gox/cache"
 // apply cache
 bc := cache.ApplyBytes(bufferSize, false)
 // recache
@@ -14,7 +14,7 @@ defer cache.ReCacheBytes(bc)
 ```
 
 ### 性能测试对比
-测试用例参考：[https://github.com/hetianyi/golib-test/blob/master/src/http_upload_server.go](https://github.com/hetianyi/golib-test/blob/master/src/http_upload_server.go)
+测试用例参考：[https://github.com/infavor/golib-test/blob/master/src/http_upload_server.go](https://github.com/infavor/golib-test/blob/master/src/http_upload_server.go)
 
 |              | 使用cache                   | 不使用cache                 |
 | ------------ | --------------------------- | --------------------------- |

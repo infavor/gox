@@ -2,7 +2,7 @@ package convert_test
 
 import (
 	"fmt"
-	"github.com/hetianyi/gox/convert"
+	"github.com/infavor/gox/convert"
 	"os"
 	"testing"
 )
