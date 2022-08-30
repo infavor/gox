@@ -1,9 +1,10 @@
 package logger_test
 
 import (
+	"testing"
+
 	"github.com/hetianyi/gox/logger"
 	"github.com/logrusorgru/aurora"
-	"testing"
 )
 
 func TestOnlyConsole(t *testing.T) {
@@ -13,7 +14,7 @@ func TestOnlyConsole(t *testing.T) {
 		AlwaysWriteConsole: true,
 	})
 	for i := 0; i < 100; i++ {
-		logger.Info(i)
+		logger.Infof("foo is %d", i)
 	}
 }
 

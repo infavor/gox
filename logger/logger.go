@@ -7,13 +7,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/hetianyi/gox"
-	"github.com/hetianyi/gox/convert"
-	"github.com/hetianyi/gox/file"
-	. "github.com/logrusorgru/aurora"
-	"github.com/mattn/go-colorable"
-	"github.com/mholt/archiver"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
@@ -23,6 +16,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hetianyi/gox"
+	"github.com/hetianyi/gox/convert"
+	"github.com/hetianyi/gox/file"
+	. "github.com/logrusorgru/aurora"
+	"github.com/mattn/go-colorable"
+	"github.com/mholt/archiver"
+	"github.com/sirupsen/logrus"
 )
 
 // Level type
@@ -238,6 +239,10 @@ func Trace(args ...interface{}) {
 // Debug log.
 func Debug(args ...interface{}) {
 	logrus.Debug(args...)
+}
+
+func Infof(format string, args ...interface{}) {
+	logrus.Infof(format, args...)
 }
 
 // Info log.
